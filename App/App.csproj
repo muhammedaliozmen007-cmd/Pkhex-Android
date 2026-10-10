@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <SupportedOSPlatformVersion>26.0</SupportedOSPlatformVersion>
+    <OutputType>Exe</OutputType>
+    <ApplicationId>org.pkhex.android.community</ApplicationId>
+    <ApplicationTitle>PKHeX Android</ApplicationTitle>
+    <ApplicationVersion>5</ApplicationVersion>
+    <ApplicationDisplayVersion>0.4.1</ApplicationDisplayVersion>
+    <RuntimeIdentifiers>android-arm64;android-arm;android-x64</RuntimeIdentifiers>
+    <AndroidPackageFormats>apk</AndroidPackageFormats>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PublishTrimmed>false</PublishTrimmed>
+    <RunAOTCompilation>false</RunAOTCompilation>
+    <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+    <AndroidEnableMarshalMethods>false</AndroidEnableMarshalMethods>
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Editor/Editor.csproj" />
+    <ProjectReference Include="../Updates/Updates.csproj" />
+  </ItemGroup>
+</Project>

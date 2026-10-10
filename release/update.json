@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "applicationId": "org.pkhex.android.community",
+  "versionCode": 5,
+  "versionName": "0.4.1",
+  "apkFile": "PKHeX-Android-0.4.1.apk",
+  "sizeBytes": 148888313,
+  "sha256": "301543e52dfb42b36c8c1543edcd6aacb371e37be42dcfdf86002b647a5f1f2c",
+  "notes": "Fehler in Auswahllisten für Wesen, Items, Fähigkeiten und Attacken behoben; Suche und Auswahl abgesichert."
+}
