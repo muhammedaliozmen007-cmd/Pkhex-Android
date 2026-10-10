@@ -1,4 +1,45 @@
-# Prüfung der ausgelieferten Version 0.4.1
+# Validation of version 0.4.2
+
+## Build and package
+
+- Final signed Android Release build: **0 errors, 0 warnings**.
+- .NET SDK 10.0.401, .NET Android 36.1.2, Android SDK/API 36, Build-Tools 36.0.0, JDK 21.0.12.1.
+- Package `org.pkhex.android.community`, version **0.4.2**, version code **6**.
+- Minimum Android API 26; target API 36; ARM64, ARM32 and x86-64.
+- Valid APK v2 and v3 signatures, with the same certificate as 0.4.1:
+  `9f5116bd6d1d408d8b5d110bdb32b972318523a1d2caa09f74a9bf80fe3624e1`.
+- APK size: **148,912,889 bytes**.
+- APK SHA-256: `0ab53fb6049b4ce72c593aa5ac67058aaddc73eed00bcaa16b72427a7e81e4b2`.
+- All APK ZIP entries passed integrity checks, including **3,258 offline artwork files**.
+- Embedded update channel points to `muhammedaliozmen007-cmd/Pkhex-Android`.
+
+## Automated checks
+
+- **446 editor/file checks**, covering 12 Pokémon formats and eight synthetic game saves.
+- **43 update checks**, including English and German update-source validation errors.
+- Language checks cover device-language normalization, English fallback, switching back,
+  species/nature/ability/move/item names, editor validation errors and legality report language.
+- Switching language leaves the tested save bytes, undo state, Pokémon draft, nickname
+  and stored Pokémon language unchanged.
+- Syntax inspection: **219 bilingual text calls**, with no unlocalized German string literals
+  outside the deliberately bilingual language selector.
+- `git diff --check` passed.
+
+## UI review and limits
+
+The language action is available before and after opening a file. The selected language
+is stored separately from the save session. Changing it rebuilds the current content and
+updates the retained header, while restoring raw field text, numeric choice IDs, nickname
+and shiny checkboxes, editor tab and scroll position. This includes incomplete numeric
+input and new Pokémon drafts; it does not call Apply or discard the draft.
+
+The Android code compiled successfully. No physical Android device or emulator was
+available for an interactive UI test; the input restoration and preference persistence
+were reviewed in source, rather than verified by tapping through a device session.
+
+---
+
+# Historical validation: version 0.4.1
 
 ## APK und Android-Build
 

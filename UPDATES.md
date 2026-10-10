@@ -1,14 +1,13 @@
 # Updates für PKHeX Android
 
 Im ☰-Menü steht **Update**, auch wenn noch keine Datei geöffnet ist.
-Der erste Aufruf fragt einmalig nach einem öffentlichen GitHub-Repository für
-diese Android-App. Nach dem Speichern reicht künftig der Update-Eintrag.
+Seit Version 0.4.2 ist das öffentliche GitHub-Repository dieser Android-App
+standardmäßig hinterlegt. Ältere Installationen fragen einmalig nach der Adresse.
 Für dieses Projekt die Adresse
 `https://github.com/muhammedaliozmen007-cmd/Pkhex-Android` verwenden.
 Der enthaltene GitHub-Actions-Workflow veröffentlicht nach erfolgreichem Build
 die APK und ihre passenden Update-Dateien als stabilen Release.
-Die manuell gebaute APK 0.4.1 enthält noch keine Standardadresse; künftig
-vom Workflow gebaute APKs enthalten diesen Update-Kanal bereits.
+Version 0.4.2 und vom Workflow gebaute APKs enthalten diesen Update-Kanal bereits.
 
 Ein neues Release wird über GitHubs `releases/latest` abgefragt. Die App prüft den
 Android-Versionscode, zeigt Version und Downloadgröße und lädt die APK nach
@@ -45,14 +44,14 @@ auch die Einrichtung eines eigenen Forks.
 
 Der Workflow erhöht den Versionscode gegenüber der Basis in `App.csproj` um die
 GitHub-Laufnummer; die sichtbare Patch-Version wird ebenfalls erhöht. Deshalb
-liefert der erste CI-Lauf auf Basis 0.4.1 eine Version 0.4.2 mit Code 6. Zukünftige
+liefert der erste CI-Lauf auf Basis 0.4.2 eine Version 0.4.3 mit Code 7. Zukünftige
 Basisversionen und Versionscodes im Projekt müssen aufsteigend gepflegt werden.
 
 ## Bereits gebaute APK manuell veröffentlichen
 
 `scripts/package_release.py` erzeugt aus der signierten APK genau die drei
 Release-Assets. `release/update.json` im Quellcode-ZIP beschreibt die ausgelieferte
-APK 0.4.1. APK, `update.json` und Quellcode-ZIP als regulären stabilen GitHub-Release
+APK 0.4.2. APK, `update.json` und Quellcode-ZIP als regulären stabilen GitHub-Release
 hochladen. Die Manifestdatei gehört zum jeweiligen APK-Build; ihr Hash muss immer
 aus der tatsächlichen APK berechnet werden. Kein Windows-Release und keine
 Vorabversion wird vom Updater als Android-Update installiert.

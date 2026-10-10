@@ -31,7 +31,7 @@ manifest = {
     'schema': 1, 'applicationId': package, 'versionCode': code,
     'versionName': version, 'apkFile': name,
     'sizeBytes': apk.stat().st_size, 'sha256': hash_value,
-    'notes': 'Fehler in Auswahllisten für Wesen, Items, Fähigkeiten und Attacken behoben; Suche und Auswahl abgesichert.'
+    'notes': 'German/English language selection in the menu; localized editor and legality reports; drafts preserved when switching languages; English README.'
 }
 text = json.dumps(manifest, ensure_ascii=False, indent=2) + '\n'
 (out / 'update.json').write_text(text, encoding='utf-8')
@@ -52,7 +52,7 @@ with ZipFile(source, 'w', compression=ZIP_DEFLATED, compresslevel=6) as archive:
         archive.write(file, 'PKHeX.Android/' + relative.as_posix(),
                       compress_type=ZIP_STORED if file.suffix == '.webp' else ZIP_DEFLATED)
     archive.writestr('PKHeX.Android/release/update.json', text)
-notes = f'PKHeX Android {version}\n\n{manifest["notes"]}\n\nInoffizieller GPL-3.0-or-later Community-Port. Vollständiger Quellcode als Release-Asset.\n'
+notes = f'PKHeX Android {version}\n\n{manifest["notes"]}\n\nUnofficial GPL-3.0-or-later community port. Complete source code included as a release asset.\n'
 (out / 'release-notes.md').write_text(notes, encoding='utf-8')
 print(json.dumps({'apk': str(apk), 'source': str(source), 'sha256': hash_value,
                   'version': version, 'versionCode': code, 'bytes': apk.stat().st_size}))

@@ -1,3 +1,4 @@
+using static PKHeX.Android.Localization.AppText;
 using Android.App;
 using Android.Graphics;
 using Android.Text;
@@ -23,7 +24,7 @@ public sealed partial class MainActivity
         var pk = selected!.Clone();
         if (choices.TryGetValue("species", out var species) && pk.Species != species) { pk.Species = (ushort)species; pk.Form = 0; }
         var pi = pk.PersonalInfo;
-        return Enumerable.Range(0, pi.AbilityCount).Select(i => $"{strings.abilitylist[pi.GetAbilityAtIndex(i)]}{(i == 2 ? " (versteckt)" : "")}").ToArray();
+        return Enumerable.Range(0, pi.AbilityCount).Select(i => $"{strings.abilitylist[pi.GetAbilityAtIndex(i)]}{(i == 2 ? T(" (versteckt)", " (hidden)") : "")}").ToArray();
     }
     private EditText Input(string key, string value, string label, bool number = false)
     {
@@ -57,7 +58,7 @@ public sealed partial class MainActivity
     private void Pick(string title, string[] names, int max, int min, Action<int> chosen, bool pictures = false, Func<int, bool>? allowed = null)
     {
         var panel = Column(); panel.SetPadding(D(14), 0, D(14), 0);
-        var search = new EditText(this) { Hint = "Name oder Nummer suchen", InputType = InputTypes.ClassText };
+        var search = new EditText(this) { Hint = T("Name oder Nummer suchen", "Search by name or number"), InputType = InputTypes.ClassText };
         search.SetSingleLine(true); panel.AddView(search);
         var list = new ListView(this); panel.AddView(list, new LinearLayout.LayoutParams(-1, D(370)));
         var indices = new List<int>(); AlertDialog? dialog = null;
@@ -89,7 +90,7 @@ public sealed partial class MainActivity
             if ((uint)e.Position >= (uint)indices.Count) return;
             var value = indices[e.Position]; Safe(() => chosen(value)); dialog?.Dismiss();
         };
-        dialog = new AlertDialog.Builder(this).SetTitle(title)!.SetView(panel)!.SetNegativeButton("Abbrechen", (_, _) => { })!.Create()!;
+        dialog = new AlertDialog.Builder(this).SetTitle(title)!.SetView(panel)!.SetNegativeButton(T("Abbrechen", "Cancel"), (_, _) => { })!.Create()!;
         dialog.DismissEvent += (_, _) => filterCancellation?.Cancel();
         Filter(); dialog.Show();
     }
@@ -121,7 +122,7 @@ public sealed partial class MainActivity
         var pk = selected!;
         var hero = Card(); hero.Background = Gradient();
         var badgeRow = Row(); previewBadge = Pill($"#{pk.Species:0000} · {pk.GetType().Name.ToUpperInvariant()}"); Add(previewBadge, badgeRow, true);
-        if (session!.Save is not null) Add(Pill(party ? $"TEAM {slot + 1}" : $"PLATZ {slot + 1}"), badgeRow, true);
+        if (session!.Save is not null) Add(Pill(party ? T($"TEAM {slot + 1}", $"PARTY {slot + 1}") : T($"PLATZ {slot + 1}", $"SLOT {slot + 1}")), badgeRow, true);
         Add(badgeRow, hero);
         previewImage = Picture(pk.Species, 168, pk.Form, pk.IsShiny, pk.Gender, pk.Context);
         previewIdentity = (pk.Species, pk.Form, pk.IsShiny, pk.Gender, pk.Context); previewFormCaption = FormName(pk);
@@ -129,11 +130,11 @@ public sealed partial class MainActivity
         previewName = Text(SpeciesName(pk.Species) + (pk.IsShiny ? " ★" : ""), 26, bold: true); previewName.Gravity = GravityFlags.Center; Add(previewName, hero);
         previewLevel = Text($"Level {pk.CurrentLevel} · {FormName(pk)}", 12, true); previewLevel.Gravity = GravityFlags.Center; Add(previewLevel, hero);
         typeChips = Row(); typeChips.SetGravity(GravityFlags.Center); Add(typeChips, hero); DrawTypeChips(pk);
-        previewFormHint = Text("Abbildung zeigt die Basisform.", 10, true); previewFormHint.Gravity = GravityFlags.Center;
+        previewFormHint = Text(T("Abbildung zeigt die Basisform.", "Artwork shows the base form."), 10, true); previewFormHint.Gravity = GravityFlags.Center;
         previewFormHint.Visibility = Artwork.HasExactForm(pk) ? ViewStates.Gone : ViewStates.Visible; Add(previewFormHint, hero);
-        var shortcuts = Row(); Add(Button("Legalität prüfen", CheckLegality), shortcuts, true);
-        Add(Button("Pokémon exportieren", ExportPokemon), shortcuts, true); Add(shortcuts, content);
-        var tabs = Row(); string[] labels = ["Basis", "Attacken", "Werte", "Infos"];
+        var shortcuts = Row(); Add(Button(T("Legalität prüfen", "Check legality"), CheckLegality), shortcuts, true);
+        Add(Button(T("Pokémon exportieren", "Export Pokémon"), ExportPokemon), shortcuts, true); Add(shortcuts, content);
+        var tabs = Row(); string[] labels = [T("Basis", "Basic"), T("Attacken", "Moves"), T("Werte", "Stats"), T("Infos", "Info")];
         editorPanels = new LinearLayout[4]; editorTabs = new Button[4];
         for (var i = 0; i < labels.Length; i++)
         {
@@ -141,32 +142,32 @@ public sealed partial class MainActivity
         }
         Add(tabs, content);
         for (var i = 0; i < 4; i++) editorPanels[i] = Card();
-        formParent = editorPanels[0]; Add(Text(creationDraft is null ? "Pokémon bearbeiten" : "Neues Pokémon erstellen", 18, bold: true), Form);
-        Choice("species", "Pokémon-Art", pk.Species, strings.specieslist, pk.MaxSpeciesID, 1);
-        Field("nickname", "Spitzname", pk.Nickname);
-        nicknamed = new CheckBox(this) { Text = "Eigenen Spitznamen verwenden", Checked = pk.IsNicknamed, TextSize = 12 };
+        formParent = editorPanels[0]; Add(Text(creationDraft is null ? T("Pokémon bearbeiten", "Edit Pokémon") : T("Neues Pokémon erstellen", "Create a new Pokémon"), 18, bold: true), Form);
+        Choice("species", T("Pokémon-Art", "Species"), pk.Species, strings.specieslist, pk.MaxSpeciesID, 1);
+        Field("nickname", T("Spitzname", "Nickname"), pk.Nickname);
+        nicknamed = new CheckBox(this) { Text = T("Eigenen Spitznamen verwenden", "Use a custom nickname"), Checked = pk.IsNicknamed, TextSize = 12 };
         nicknamed.SetTextColor(Muted); nicknamed.CheckedChange += (_, _) => MarkDirty("nickname"); Add(nicknamed, Form);
         Field("level", "Level · 1–100", pk.CurrentLevel.ToString(), true);
-        if (pk.Format >= 2) Choice("item", "Getragenes Item", pk.HeldItem, ItemNames(), pk.MaxItemID);
+        if (pk.Format >= 2) Choice("item", T("Getragenes Item", "Held item"), pk.HeldItem, ItemNames(), pk.MaxItemID);
         if (pk.Format >= 3)
         {
-            Choice("nature", "Wesen", (int)pk.Nature, strings.natures, 24);
-            var labelsAbility = AbilityNames(); Choice("ability", "Fähigkeit", pk.AbilityNumber switch { 4 => 2, 2 => 1, _ => 0 }, labelsAbility, labelsAbility.Length - 1);
+            Choice("nature", T("Wesen", "Nature"), (int)pk.Nature, strings.natures, 24);
+            var labelsAbility = AbilityNames(); Choice("ability", T("Fähigkeit", "Ability"), pk.AbilityNumber switch { 4 => 2, 2 => 1, _ => 0 }, labelsAbility, labelsAbility.Length - 1);
         }
-        shiny = new CheckBox(this) { Text = "Schillernd (Shiny)", Checked = pk.IsShiny, Enabled = pk.Format >= 2, TextSize = 14 };
+        shiny = new CheckBox(this) { Text = T("Schillernd (Shiny)", "Shiny"), Checked = pk.IsShiny, Enabled = pk.Format >= 2, TextSize = 14 };
         shiny.SetTextColor(AColor.Rgb(249, 200, 101)); shiny.CheckedChange += (_, _) => MarkDirty("shiny"); Add(shiny, Form);
-        Add(Text("Die Bildvorschau zeigt Änderungen sofort. Übernimm sie vor dem Export.", 11, true), Form);
-        formParent = editorPanels[1]; Add(Text("Attacken", 18, bold: true), Form);
-        Add(Text("Tippe auf eine Attacke, um nach Name oder Nummer zu suchen.", 12, true), Form);
-        for (var i = 0; i < 4; i++) Choice("move" + i, $"Attacke {i + 1}", pk.GetMove(i), strings.movelist, pk.MaxMoveID);
+        Add(Text(T("Die Bildvorschau zeigt Änderungen sofort. Übernimm sie vor dem Export.", "The preview shows changes immediately. Apply them before exporting."), 11, true), Form);
+        formParent = editorPanels[1]; Add(Text(T("Attacken", "Moves"), 18, bold: true), Form);
+        Add(Text(T("Tippe auf eine Attacke, um nach Name oder Nummer zu suchen.", "Tap a move to search by name or number."), 12, true), Form);
+        for (var i = 0; i < 4; i++) Choice("move" + i, T($"Attacke {i + 1}", $"Move {i + 1}"), pk.GetMove(i), strings.movelist, pk.MaxMoveID);
         formParent = editorPanels[2]; RenderStats(pk);
-        formParent = editorPanels[3]; Add(Text("Herkunft & Prüfung", 18, bold: true), Form);
-        Add(Text($"Originaltrainer\n{pk.OriginalTrainerName}\n\nTrainer-ID: {pk.DisplayTID}\nGeheime ID: {pk.DisplaySID}\nFormat: {pk.GetType().Name}\nForm: {FormName(pk)}", 14, true), Form);
-        Add(Button("Legalitätsbericht öffnen", CheckLegality), Form);
-        if (session.Save is not null) Add(Button("Diesen Platz durch Import ersetzen", ImportFile), Form);
-        Add(Text("Bearbeitung garantiert keine Legalität. Beim Wechsel der Art wird die Form auf 0 gesetzt.", 12, true), Form);
+        formParent = editorPanels[3]; Add(Text(T("Herkunft & Prüfung", "Origin & checks"), 18, bold: true), Form);
+        Add(Text(T($"Originaltrainer\n{pk.OriginalTrainerName}\n\nTrainer-ID: {pk.DisplayTID}\nGeheime ID: {pk.DisplaySID}\nFormat: {pk.GetType().Name}\nForm: {FormName(pk)}", $"Original trainer\n{pk.OriginalTrainerName}\n\nTrainer ID: {pk.DisplayTID}\nSecret ID: {pk.DisplaySID}\nFormat: {pk.GetType().Name}\nForm: {FormName(pk)}"), 14, true), Form);
+        Add(Button(T("Legalitätsbericht öffnen", "Open legality report"), CheckLegality), Form);
+        if (session.Save is not null) Add(Button(T("Diesen Platz durch Import ersetzen", "Replace this slot by importing"), ImportFile), Form);
+        Add(Text(T("Bearbeitung garantiert keine Legalität. Beim Wechsel der Art wird die Form auf 0 gesetzt.", "Editing does not guarantee legality. Changing the species resets the form to 0."), 12, true), Form);
         formParent = null; SelectEditorTab(Math.Clamp(editorTab, 0, 3));
-        draftStatus = Text(creationDraft is null ? "Änderungen mit „Übernehmen“ speichern." : "Neues Pokémon mit „Übernehmen“ in den freien Platz speichern.", 11, true); Add(draftStatus, content);
+        draftStatus = Text(creationDraft is null ? T("Änderungen mit „Übernehmen“ speichern.", "Save changes with “Apply”.") : T("Neues Pokémon mit „Übernehmen“ in den freien Platz speichern.", "Save the new Pokémon to the empty slot with “Apply”."), 11, true); Add(draftStatus, content);
     }
     private void SelectEditorTab(int index)
     {
@@ -180,10 +181,10 @@ public sealed partial class MainActivity
     }
     private void RenderStats(PKM pk)
     {
-        Add(Text("Werte & Training", 18, bold: true), Form);
-        Add(Text(pk.Format <= 2 ? "DVs und Stat-Exp. KP-DV sowie Spezialwerte sind gekoppelt." : "IVs bestimmen das Potenzial. EVs entstehen durch Training.", 12, true), Form);
-        var heading = Row(); Add(Text("Wert", 11, true), heading, true); Add(Text(pk.Format <= 2 ? "DV" : "IV", 11, true), heading, true); Add(Text("EV", 11, true), heading, true); Add(heading, Form);
-        string[] stats = ["KP", "Angriff", "Vert.", "Sp.-Ang.", "Sp.-Vert.", "Initiative"];
+        Add(Text(T("Werte & Training", "Stats & training"), 18, bold: true), Form);
+        Add(Text(pk.Format <= 2 ? T("DVs und Stat-Exp. KP-DV sowie Spezialwerte sind gekoppelt.", "DVs and Stat Exp. HP DV and Special stats are linked.") : T("IVs bestimmen das Potenzial. EVs entstehen durch Training.", "IVs determine potential. EVs come from training."), 12, true), Form);
+        var heading = Row(); Add(Text(T("Wert", "Stat"), 11, true), heading, true); Add(Text(pk.Format <= 2 ? "DV" : "IV", 11, true), heading, true); Add(Text("EV", 11, true), heading, true); Add(heading, Form);
+        string[] stats = [T("KP", "HP"), T("Angriff", "Attack"), T("Vert.", "Defense"), T("Sp.-Ang.", "Sp. Atk"), T("Sp.-Vert.", "Sp. Def"), T("Initiative", "Speed")];
         int[] ivs = [pk.IV_HP, pk.IV_ATK, pk.IV_DEF, pk.IV_SPA, pk.IV_SPD, pk.IV_SPE];
         int[] evs = [pk.EV_HP, pk.EV_ATK, pk.EV_DEF, pk.EV_SPA, pk.EV_SPD, pk.EV_SPE];
         for (var i = 0; i < 6; i++)
@@ -195,14 +196,14 @@ public sealed partial class MainActivity
             Add(iv, row, true); Add(ev, row, true); Add(row, Form);
         }
         evTotal = Text("", 12, true); Add(evTotal, Form); UpdateEvTotal();
-        Add(Text($"{(pk.Format <= 2 ? "DV" : "IV")}: 0–{pk.MaxIV} · EV pro Wert: 0–{pk.MaxEV}", 11, true), Form);
+        Add(Text(T($"{(pk.Format <= 2 ? "DV" : "IV")}: 0–{pk.MaxIV} · EV pro Wert: 0–{pk.MaxEV}", $"{(pk.Format <= 2 ? "DV" : "IV")}: 0–{pk.MaxIV} · EV per stat: 0–{pk.MaxEV}"), 11, true), Form);
     }
     private void UpdateEvTotal()
     {
         if (evTotal is null || selected is null || fields.Count == 0) return;
         int total = 0;
         for (var i = 0; i < 6; i++) if (fields.TryGetValue("ev"+i, out var field) && int.TryParse(field.Text, out var value)) total += value;
-        evTotal.Text = selected.Format <= 2 ? $"Stat-Exp. gesamt: {total}" : $"EV gesamt: {total} / 510";
+        evTotal.Text = selected.Format <= 2 ? T($"Stat-Exp. gesamt: {total}", $"Total Stat Exp.: {total}") : T($"EV gesamt: {total} / 510", $"Total EVs: {total} / 510");
         evTotal.SetTextColor(selected.Format >= 3 && total > 510 ? AColor.Rgb(255, 142, 142) : Accent);
     }
     private void DrawTypeChips(PKM pk)
@@ -228,7 +229,7 @@ public sealed partial class MainActivity
             var typesChanged = previewIdentity is not { } old || old.Species != species || old.Form != form;
             var pk = selected.Clone(); pk.Species = species; pk.Form = form;
             Artwork.Bind(previewImage, D(168), pictureCancellation.Token, species, form, isShiny, pk.Gender, pk.Context);
-            previewImage.ContentDescription = SpeciesName(species) + (isShiny ? ", schillernd" : "");
+            previewImage.ContentDescription = SpeciesName(species) + (isShiny ? T(", schillernd", ", shiny") : "");
             previewName.Text = SpeciesName(species) + (isShiny ? " ★" : "");
             if (previewBadge is not null) previewBadge.Text = $"#{species:0000} · {selected.GetType().Name.ToUpperInvariant()}";
             if (previewFormHint is not null) previewFormHint.Visibility = Artwork.HasExactForm(pk) ? ViewStates.Gone : ViewStates.Visible;

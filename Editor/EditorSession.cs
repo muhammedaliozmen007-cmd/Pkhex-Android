@@ -1,3 +1,4 @@
+using static PKHeX.Android.Localization.AppText;
 using PKHeX.Core;
 
 namespace PKHeX.Android.Editor;
@@ -16,7 +17,7 @@ public sealed class EditorSession
     public static EditorSession Open(byte[] bytes, string fileName)
     {
         if (bytes.Length == 0 || bytes.Length > MaxFileSize)
-            throw new ArgumentException("Die Datei ist leer oder größer als 32 MB.");
+            throw new ArgumentException(T("Die Datei ist leer oder größer als 32 MB.", "The file is empty or larger than 32 MB."));
         var s = new EditorSession { FileName = Path.GetFileName(fileName), Original = (byte[])bytes.Clone() };
         s.Save = SaveUtil.GetSaveFile((byte[])bytes.Clone(), s.FileName);
         if (s.Save is not null)
@@ -28,7 +29,7 @@ public sealed class EditorSession
         var hint = EntityFileExtension.GetContextFromExtension(Path.GetExtension(fileName));
         s.Entity = EntityFormat.GetFromBytes((byte[])bytes.Clone(), hint);
         if (s.Entity is null || s.Entity.Species == 0 || s.Entity.Species > s.Entity.MaxSpeciesID || !s.Entity.ChecksumValid)
-            throw new ArgumentException("Kein unterstützter Spielstand oder keine gültige Pokémon-Datei. Bitte einen entschlüsselten Spielstand auswählen, keine ROM oder ZIP-Datei.");
+            throw new ArgumentException(T("Kein unterstützter Spielstand oder keine gültige Pokémon-Datei. Bitte einen entschlüsselten Spielstand auswählen, keine ROM oder ZIP-Datei.", "Unsupported save file or invalid Pokémon file. Please select a decrypted save file, not a ROM or ZIP file."));
         return s;
     }
 
@@ -36,7 +37,7 @@ public sealed class EditorSession
 
     public PKM GetEntity(int box, int slot, bool party = false)
     {
-        if (Save is null) return Entity?.Clone() ?? throw new InvalidOperationException("Keine Datei geöffnet.");
+        if (Save is null) return Entity?.Clone() ?? throw new InvalidOperationException(T("Keine Datei geöffnet.", "No file is open."));
         ValidateSlot(box, slot, party);
         // Slots beyond PartyCount can contain stale data. Only the next contiguous
         // place is available for adding a Pokémon; never expose those stale bytes.
@@ -46,7 +47,7 @@ public sealed class EditorSession
 
     private void ValidateSlot(int box, int slot, bool party)
     {
-        var sav = Save ?? throw new InvalidOperationException("Kein Spielstand geöffnet.");
+        var sav = Save ?? throw new InvalidOperationException(T("Kein Spielstand geöffnet.", "No save file is open."));
         if (party)
         {
             if (!sav.HasParty || slot < 0 || slot >= 6 || slot > sav.PartyCount) throw new ArgumentOutOfRangeException(nameof(slot));
@@ -59,14 +60,14 @@ public sealed class EditorSession
     {
         ValidateSlot(box, slot, party);
         if (!party && Save!.IsBoxSlotOverwriteProtected(box, slot))
-            throw new InvalidOperationException("Dieser Platz ist vom Spiel geschützt.");
+            throw new InvalidOperationException(T("Dieser Platz ist vom Spiel geschützt.", "This slot is protected by the game."));
     }
 
     private SaveFile CheckEmptySlot(int box, int slot, bool party)
     {
         CheckWritable(box, slot, party);
         if (GetEntity(box, slot, party).Species != 0)
-            throw new InvalidOperationException("Dieser Platz ist bereits belegt. Wähle einen freien Platz.");
+            throw new InvalidOperationException(T("Dieser Platz ist bereits belegt. Wähle einen freien Platz.", "This slot is occupied. Select an empty slot."));
         return Save!;
     }
 
@@ -78,7 +79,7 @@ public sealed class EditorSession
         // Some older formats normalize out-of-range species in their setter.
         // Validate the requested ID before assigning it to the format object.
         if (species == 0 || species > pk.MaxSpeciesID || !sav.Personal.IsPresentInGame(species, 0))
-            throw new ArgumentException("Diese Pokémon-Art ist in diesem Spiel nicht verfügbar.");
+            throw new ArgumentException(T("Diese Pokémon-Art ist in diesem Spiel nicht verfügbar.", "This species is not available in this game."));
         pk.Species = species;
         ValidateCandidate(pk);
         var language = (int)BlankSaveFile.GetSafeLanguage(sav);
@@ -116,7 +117,7 @@ public sealed class EditorSession
         var sav = CheckEmptySlot(box, slot, party);
         var pk = EntityFormat.GetFromBytes((byte[])bytes.Clone(), sav.Context);
         if (pk is null || !pk.ChecksumValid)
-            throw new ArgumentException("Der Pokémon-Entwurf ist ungültig.");
+            throw new ArgumentException(T("Der Pokémon-Entwurf ist ungültig.", "The Pokémon draft is invalid."));
         ValidateCandidate(pk);
         return pk.Clone();
     }
@@ -124,12 +125,12 @@ public sealed class EditorSession
     private void ValidateCandidate(PKM pk)
     {
         if (pk.Species == 0 || pk.Species > pk.MaxSpeciesID)
-            throw new ArgumentException("Ungültige Pokémon-Art.");
+            throw new ArgumentException(T("Ungültige Pokémon-Art.", "Invalid species."));
         if (Save is null) return;
         if (pk.GetType() != Save.BlankPKM.GetType())
-            throw new ArgumentException("Das Pokémon-Format passt nicht zu diesem Spielstand.");
+            throw new ArgumentException(T("Das Pokémon-Format passt nicht zu diesem Spielstand.", "The Pokémon format does not match this save file."));
         if (!Save.Personal.IsPresentInGame(pk.Species, pk.Form))
-            throw new ArgumentException("Diese Pokémon-Art oder Form ist in diesem Spiel nicht verfügbar.");
+            throw new ArgumentException(T("Diese Pokémon-Art oder Form ist in diesem Spiel nicht verfügbar.", "This species or form is not available in this game."));
     }
 
     private void Snapshot()
@@ -158,7 +159,7 @@ public sealed class EditorSession
         CheckWritable(box, slot, party);
         var pk = EntityFormat.GetFromBytes(bytes, EntityFileExtension.GetContextFromExtension(Path.GetExtension(fileName), Save!.Context));
         if (pk is null || pk.Species == 0 || pk.Species > pk.MaxSpeciesID || !pk.ChecksumValid)
-            throw new ArgumentException("Die Pokémon-Datei ist ungültig.");
+            throw new ArgumentException(T("Die Pokémon-Datei ist ungültig.", "The Pokémon file is invalid."));
         // This initial port intentionally requires the matching format; no implicit generation conversion.
         Commit(pk, box, slot, party);
     }
@@ -187,10 +188,10 @@ public sealed class EditorSession
 
     public void EditTrainer(string name, uint money)
     {
-        var sav = Save ?? throw new InvalidOperationException("Kein Spielstand geöffnet.");
+        var sav = Save ?? throw new InvalidOperationException(T("Kein Spielstand geöffnet.", "No save file is open."));
         if (name.Length == 0 || name.Length > sav.MaxStringLengthTrainer)
-            throw new ArgumentException($"Trainername: 1–{sav.MaxStringLengthTrainer} Zeichen.");
-        if (money > sav.MaxMoney) throw new ArgumentException($"Geld: 0–{sav.MaxMoney}.");
+            throw new ArgumentException(T($"Trainername: 1–{sav.MaxStringLengthTrainer} Zeichen.", $"Trainer name: 1–{sav.MaxStringLengthTrainer} characters."));
+        if (money > sav.MaxMoney) throw new ArgumentException(T($"Geld: 0–{sav.MaxMoney}.", $"Money: 0–{sav.MaxMoney}."));
         var next = sav.Clone(); next.OT = name; next.Money = money;
         Snapshot(); Save = next;
     }
@@ -201,16 +202,16 @@ public sealed record PokemonEdit(ushort Species, string Nickname, bool IsNicknam
 {
     public PKM Apply(PKM original)
     {
-        if (Species == 0 || Species > original.MaxSpeciesID) throw new ArgumentException("Ungültige Pokémon-Art.");
-        if (Nickname.Length > original.MaxStringLengthNickname) throw new ArgumentException($"Spitzname: maximal {original.MaxStringLengthNickname} Zeichen.");
-        if (IsNicknamed && string.IsNullOrWhiteSpace(Nickname)) throw new ArgumentException("Bitte einen Spitznamen eingeben oder Spitzname deaktivieren.");
+        if (Species == 0 || Species > original.MaxSpeciesID) throw new ArgumentException(T("Ungültige Pokémon-Art.", "Invalid species."));
+        if (Nickname.Length > original.MaxStringLengthNickname) throw new ArgumentException(T($"Spitzname: maximal {original.MaxStringLengthNickname} Zeichen.", $"Nickname: up to {original.MaxStringLengthNickname} characters."));
+        if (IsNicknamed && string.IsNullOrWhiteSpace(Nickname)) throw new ArgumentException(T("Bitte einen Spitznamen eingeben oder Spitzname deaktivieren.", "Please enter a nickname or disable the custom nickname."));
         if (Level is < 1 or > 100) throw new ArgumentException("Level: 1–100.");
-        if (HeldItem < 0 || HeldItem > Math.Max(0, original.MaxItemID)) throw new ArgumentException("Ungültiges Item.");
-        if ((uint)Nature >= 25 || AbilitySlot is < 0 or > 2) throw new ArgumentException("Ungültiges Wesen oder Fähigkeit.");
+        if (HeldItem < 0 || HeldItem > Math.Max(0, original.MaxItemID)) throw new ArgumentException(T("Ungültiges Item.", "Invalid item."));
+        if ((uint)Nature >= 25 || AbilitySlot is < 0 or > 2) throw new ArgumentException(T("Ungültiges Wesen oder Fähigkeit.", "Invalid nature or ability."));
         if (IVs.Length != 6 || IVs.Any(v => v < 0 || v > original.MaxIV)) throw new ArgumentException($"IVs: 0–{original.MaxIV}.");
         if (EVs.Length != 6 || EVs.Any(v => v < 0 || v > original.MaxEV)) throw new ArgumentException($"EVs: 0–{original.MaxEV}.");
-        if (original.Format >= 3 && EVs.Sum() > 510) throw new ArgumentException("EVs dürfen zusammen höchstens 510 ergeben.");
-        if (Moves.Length != 4 || Moves.Any(m => m > original.MaxMoveID)) throw new ArgumentException("Ungültige Attacke.");
+        if (original.Format >= 3 && EVs.Sum() > 510) throw new ArgumentException(T("EVs dürfen zusammen höchstens 510 ergeben.", "The EV total must not exceed 510."));
+        if (Moves.Length != 4 || Moves.Any(m => m > original.MaxMoveID)) throw new ArgumentException(T("Ungültige Attacke.", "Invalid move."));
         var pk = original.Clone();
         if (pk.Species != Species) { pk.Species = Species; pk.Form = 0; }
         pk.IsNicknamed = IsNicknamed;
@@ -222,7 +223,7 @@ public sealed record PokemonEdit(ushort Species, string Nickname, bool IsNicknam
             if (pk.Format <= 4 && pk.Nature != Nature) pk.SetPIDNature(Nature);
             else pk.Nature = Nature;
             var abilities = pk.PersonalInfo.AbilityCount;
-            if (AbilitySlot >= abilities) throw new ArgumentException("Diese Fähigkeit existiert für dieses Pokémon nicht.");
+            if (AbilitySlot >= abilities) throw new ArgumentException(T("Diese Fähigkeit existiert für dieses Pokémon nicht.", "This ability is not available for this Pokémon."));
             if (pk.Format is >= 3 and <= 5 && AbilitySlot < 2 && pk.PIDAbility != AbilitySlot && pk.Version != GameVersion.CXD)
             {
                 uint bit = pk.Gen5 ? 0x10000u : 1u;

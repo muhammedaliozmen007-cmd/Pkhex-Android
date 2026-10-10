@@ -1,10 +1,10 @@
 {
   "schema": 1,
   "applicationId": "org.pkhex.android.community",
-  "versionCode": 5,
-  "versionName": "0.4.1",
-  "apkFile": "PKHeX-Android-0.4.1.apk",
-  "sizeBytes": 148888313,
-  "sha256": "301543e52dfb42b36c8c1543edcd6aacb371e37be42dcfdf86002b647a5f1f2c",
-  "notes": "Fehler in Auswahllisten für Wesen, Items, Fähigkeiten und Attacken behoben; Suche und Auswahl abgesichert."
+  "versionCode": 6,
+  "versionName": "0.4.2",
+  "apkFile": "PKHeX-Android-0.4.2.apk",
+  "sizeBytes": 148912889,
+  "sha256": "0ab53fb6049b4ce72c593aa5ac67058aaddc73eed00bcaa16b72427a7e81e4b2",
+  "notes": "German/English language selection in the menu; localized editor and legality reports; drafts preserved when switching languages; English README."
 }

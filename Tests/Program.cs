@@ -1,5 +1,6 @@
 using PKHeX.Core;
 using PKHeX.Android.Editor;
+using PKHeX.Android.Localization;
 
 if (args.Length == 3 && args[0] == "--verify-export")
 {
@@ -194,4 +195,39 @@ foreach (var version in games)
     File.WriteAllBytes(Path.Combine(outputPath, version + ".sav"), s.Export());
     Console.WriteLine("PASS save " + version);
 }
+// UI language changes must localize Core data and errors without changing files.
+Assert(AppText.Normalize("de-DE") == "de" && AppText.Normalize("DE_at") == "de", "German language normalization failed");
+Assert(AppText.Normalize("en-US") == "en" && AppText.Normalize("fr") == "en" && AppText.Normalize(null) == "en", "English fallback failed");
+var languageSession = EditorSession.Open(File.ReadAllBytes(Path.Combine(outputPath, "Pikachu.pk9")), "Pikachu.pk9");
+var languageOriginal = languageSession.Export();
+var languagePokemon = languageSession.GetEntity(0, 0);
+var languageDraft = Edit(languagePokemon, 42) with { Nickname = "Mein Name" };
+var languageDraftBytes = EditorSession.ExportEntity(languageDraft.Apply(languagePokemon));
+var germanStrings = EditorLanguage.Use("de-DE");
+Assert(germanStrings.specieslist[6] == "Glurak", "German species name missing");
+Assert(germanStrings.movelist[33] == "Tackle", "German move name missing");
+Assert(AppText.T("Übernehmen", "Apply") == "Übernehmen", "German UI text missing");
+string LocalizedError(Action action)
+{
+    try { action(); } catch (ArgumentException ex) { return ex.Message; }
+    throw new Exception("Validation did not reject input");
+}
+Assert(LocalizedError(() => EditorSession.Open([], "empty")) == "Die Datei ist leer oder größer als 32 MB.", "German editor error missing");
+var germanReport = new LegalityAnalysis(languagePokemon).Report(AppText.Language, true);
+var englishStrings = EditorLanguage.Use("en-US");
+Assert(englishStrings.specieslist[6] == "Charizard", "English species name missing");
+Assert(englishStrings.natures[(int)Nature.Hardy] == "Hardy", "English nature name missing");
+Assert(englishStrings.abilitylist[9] == "Static", "English ability name missing");
+Assert(englishStrings.movelist[33] == "Tackle", "English move name missing");
+Assert(englishStrings.GetItemStrings(EntityContext.Gen9, GameVersion.SL)[1] == "Master Ball", "English item name missing");
+Assert(AppText.T("Übernehmen", "Apply") == "Apply", "English UI text missing");
+Assert(LocalizedError(() => EditorSession.Open([], "empty")) == "The file is empty or larger than 32 MB.", "English editor error missing");
+Assert(LocalizedError(() => (languageDraft with { Nickname = "" }).Apply(languagePokemon)) == "Please enter a nickname or disable the custom nickname.", "English draft error missing");
+var englishReport = new LegalityAnalysis(languagePokemon).Report(AppText.Language, true);
+Assert(!string.IsNullOrWhiteSpace(englishReport) && englishReport != germanReport, "Legality report language did not change");
+Assert(languageSession.Export().SequenceEqual(languageOriginal) && !languageSession.Dirty && !languageSession.CanUndo, "Language change modified session or undo history");
+Assert(EditorSession.ExportEntity(languageDraft.Apply(languagePokemon)).SequenceEqual(languageDraftBytes), "Language change modified draft, nickname or Pokémon language");
+var returnedStrings = EditorLanguage.Use("de");
+Assert(returnedStrings.specieslist[6] == "Glurak" && AppText.T("Übernehmen", "Apply") == "Übernehmen", "Switching back to German failed");
+Assert(EditorSession.ExportEntity(languageDraft.Apply(languagePokemon)).SequenceEqual(languageDraftBytes), "Switching back modified draft");
 Console.WriteLine($"ALL PASS: {assertions} assertions, {formats.Length} Pokémon formats, {games.Length} game saves.");

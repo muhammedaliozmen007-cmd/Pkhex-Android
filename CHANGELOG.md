@@ -1,3 +1,11 @@
+# 0.4.2
+
+- Gespeicherte Sprachauswahl Deutsch/Englisch über „☰ → Sprache / Language“.
+- Oberfläche, Validierung und Update-Dialoge sowie Core-Namen und Legalitätsberichte übersetzen.
+- Offene Sitzung, neue Pokémon-Entwürfe und noch nicht übernommene Eingaben beim Sprachwechsel erhalten.
+- README auf Englisch und Update-Repository standardmäßig hinterlegen.
+- Versionscode 6; Paketkennung und Signaturschlüssel beibehalten.
+
 # 0.4.1
 
 - `Java.Lang.UnsupportedOperationException` in Wesen-, Item-, Fähigkeits- und

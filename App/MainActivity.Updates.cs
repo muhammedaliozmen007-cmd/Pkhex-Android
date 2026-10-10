@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+using static PKHeX.Android.Localization.AppText;
 using Android.App;
 using Android.Content;
 using Android.Content.PM;
@@ -21,7 +22,7 @@ public sealed partial class MainActivity
     private PackageInfo? installedPackage;
     private static PackageInfoFlags SigningFlags => OperatingSystem.IsAndroidVersionAtLeast(28) ? PackageInfoFlags.SigningCertificates : PackageInfoFlags.Signatures;
     private PackageInfo InstalledPackage => installedPackage ??= PackageManager!.GetPackageInfo(PackageName!, SigningFlags)
-        ?? throw new InvalidOperationException("Installierte App-Version konnte nicht gelesen werden.");
+        ?? throw new InvalidOperationException(T("Installierte App-Version konnte nicht gelesen werden.", "Could not read the installed app version."));
     private long InstalledVersion => VersionCodeOf(InstalledPackage);
     private string UpdateApkPath => UpdateApkProvider.ApkPath(this);
     private string UpdateMetadataPath => Path.Combine(FilesDir!.AbsolutePath, "updates", "latest.json");
@@ -42,12 +43,12 @@ public sealed partial class MainActivity
     {
         if (updateBusy) return;
         var panel = Column(); panel.SetPadding(D(20), D(10), D(20), D(12));
-        Add(Text("Einmal einrichten: das öffentliche GitHub-Repository, das die Android-Versionen dieser App bereitstellt. Danach lädt „Update“ die neueste APK.", 14, true), panel);
+        Add(Text(T("Einmal einrichten: das öffentliche GitHub-Repository, das die Android-Versionen dieser App bereitstellt. Danach lädt „Update“ die neueste APK.", "Set up the public GitHub repository that provides Android releases for this app. After that, “Update” downloads the latest APK."), 14, true), panel);
         var source = new EditText(this) { Hint = "https://github.com/name/PKHeX-Android", Text = UpdateRepository(), InputType = InputTypes.ClassText | InputTypes.TextVariationUri, TextSize = 14 };
         source.SetSingleLine(true); Add(source, panel);
         var error = Text("", 12); error.SetTextColor(global::Android.Graphics.Color.Rgb(255, 142, 142)); Add(error, panel);
-        var dialog = new AlertDialog.Builder(this).SetTitle("Update-Quelle einrichten")!.SetView(panel)!
-            .SetNegativeButton("Später", (_, _) => { })!.SetPositiveButton("Speichern & prüfen", (_, _) => { })!.Create()!;
+        var dialog = new AlertDialog.Builder(this).SetTitle(T("Update-Quelle einrichten", "Set up update source"))!.SetView(panel)!
+            .SetNegativeButton(T("Später", "Later"), (_, _) => { })!.SetPositiveButton(T("Speichern & prüfen", "Save & check"), (_, _) => { })!.Create()!;
         dialog.Show();
         dialog.GetButton((int)DialogButtonType.Positive)!.Click += (_, _) =>
         {
@@ -73,9 +74,9 @@ public sealed partial class MainActivity
             downloaded = DownloadedUpdate(source);
             updateBusy = true; updateCancellation = new(); updateCancellation.CancelAfter(TimeSpan.FromSeconds(40));
             var panel = Column(); panel.SetPadding(D(20), D(15), D(20), D(15));
-            panel.AddView(new ProgressBar(this)); Add(Text("Neueste Version wird geprüft …", 14), panel);
+            panel.AddView(new ProgressBar(this)); Add(Text(T("Neueste Version wird geprüft …", "Checking the latest version …"), 14), panel);
             using var progress = new AlertDialog.Builder(this).SetTitle("Update")!.SetView(panel)!.SetCancelable(false)!
-                .SetNegativeButton("Abbrechen", (_, _) => updateCancellation?.Cancel())!.Create()!;
+                .SetNegativeButton(T("Abbrechen", "Cancel"), (_, _) => updateCancellation?.Cancel())!.Create()!;
             progress.Show();
             AvailableUpdate? latest;
             try
@@ -86,13 +87,13 @@ public sealed partial class MainActivity
             finally { if (ActiveUi) progress.Dismiss(); }
             if (!ActiveUi) return;
             if (latest is null)
-                new AlertDialog.Builder(this).SetTitle("Du bist auf dem neuesten Stand")!
-                    .SetMessage("Installiert: " + InstalledPackage.VersionName)!
-                    .SetNeutralButton("Quelle ändern", (_, _) => ConfigureUpdateSource())!.SetPositiveButton("OK", (_, _) => { })?.Show();
+                new AlertDialog.Builder(this).SetTitle(T("Du bist auf dem neuesten Stand", "You are up to date"))!
+                    .SetMessage(T("Installiert: ", "Installed: ") + InstalledPackage.VersionName)!
+                    .SetNeutralButton(T("Quelle ändern", "Change source"), (_, _) => ConfigureUpdateSource())!.SetPositiveButton("OK", (_, _) => { })?.Show();
             else ShowAvailableUpdate(latest, downloaded?.Manifest.VersionCode == latest.Manifest.VersionCode &&
                 downloaded.Manifest.Sha256.Equals(latest.Manifest.Sha256, StringComparison.OrdinalIgnoreCase));
         }
-        catch (OperationCanceledException) { if (ActiveUi) Toast.MakeText(this, "Update-Prüfung abgebrochen oder Zeitlimit erreicht", ToastLength.Short)?.Show(); }
+        catch (OperationCanceledException) { if (ActiveUi) Toast.MakeText(this, T("Update-Prüfung abgebrochen oder Zeitlimit erreicht", "Update check cancelled or timed out"), ToastLength.Short)?.Show(); }
         catch (Exception ex) { if (ActiveUi) UpdateError(ex.Message, downloaded); }
         finally { updateBusy = false; updateCancellation?.Dispose(); updateCancellation = null; }
     }
@@ -114,12 +115,12 @@ public sealed partial class MainActivity
     {
         var manifest = update.Manifest;
         var notes = manifest.Notes ?? ""; if (notes.Length > 2000) notes = notes[..2000];
-        var message = $"Installiert: {InstalledPackage.VersionName}\nNeue Version: {manifest.VersionName}\nDownload: {manifest.SizeBytes / (1024.0 * 1024):F1} MB";
+        var message = T($"Installiert: {InstalledPackage.VersionName}\nNeue Version: {manifest.VersionName}\nDownload: {manifest.SizeBytes / (1024.0 * 1024):F1} MB", $"Installed: {InstalledPackage.VersionName}\nNew version: {manifest.VersionName}\nDownload: {manifest.SizeBytes / (1024.0 * 1024):F1} MB");
         if (notes.Length > 0) message += "\n\n" + notes;
-        if (downloaded) message += "\n\nDie APK ist bereits heruntergeladen.";
-        new AlertDialog.Builder(this).SetTitle(downloaded ? "Update bereit" : "Neue Version verfügbar")!.SetMessage(message)!
-            .SetNegativeButton("Später", (_, _) => { })!.SetNeutralButton("Quelle ändern", (_, _) => ConfigureUpdateSource())!
-            .SetPositiveButton(downloaded ? "Installieren" : "Herunterladen", (_, _) =>
+        if (downloaded) message += T("\n\nDie APK ist bereits heruntergeladen.", "\n\nThe APK has already been downloaded.");
+        new AlertDialog.Builder(this).SetTitle(downloaded ? T("Update bereit", "Update ready") : T("Neue Version verfügbar", "New version available"))!.SetMessage(message)!
+            .SetNegativeButton(T("Später", "Later"), (_, _) => { })!.SetNeutralButton(T("Quelle ändern", "Change source"), (_, _) => ConfigureUpdateSource())!
+            .SetPositiveButton(downloaded ? T("Installieren", "Install") : T("Herunterladen", "Download"), (_, _) =>
             {
                 if (downloaded) InstallDownloadedUpdate(update); else DownloadUpdate(update);
             })?.Show();
@@ -131,9 +132,9 @@ public sealed partial class MainActivity
         updateBusy = true; updateCancellation = new(); updateCancellation.CancelAfter(TimeSpan.FromMinutes(20));
         var panel = Column(); panel.SetPadding(D(20), D(15), D(20), D(15));
         var bar = new ProgressBar(this, null, global::Android.Resource.Attribute.ProgressBarStyleHorizontal) { Max = 100, Indeterminate = false };
-        Add(bar, panel); var status = Text("Download startet …", 14); Add(status, panel);
-        using var dialog = new AlertDialog.Builder(this).SetTitle("Update herunterladen")!.SetView(panel)!.SetCancelable(false)!
-            .SetNegativeButton("Abbrechen", (_, _) => updateCancellation?.Cancel())!.Create()!;
+        Add(bar, panel); var status = Text(T("Download startet …", "Starting download …"), 14); Add(status, panel);
+        using var dialog = new AlertDialog.Builder(this).SetTitle(T("Update herunterladen", "Download update"))!.SetView(panel)!.SetCancelable(false)!
+            .SetNegativeButton(T("Abbrechen", "Cancel"), (_, _) => updateCancellation?.Cancel())!.Create()!;
         dialog.Show(); var succeeded = false;
         try
         {
@@ -145,12 +146,12 @@ public sealed partial class MainActivity
                 status.Text = $"{value.Percent} % · {value.Received / (1024.0 * 1024):F1} / {value.Total / (1024.0 * 1024):F1} MB";
             });
             await new UpdateClient(http).DownloadAsync(update, UpdateApkPath, progress, updateCancellation.Token);
-            status.Text = "APK wird geprüft …"; bar.Indeterminate = true;
+            status.Text = T("APK wird geprüft …", "Checking APK …"); bar.Indeterminate = true;
             await Task.Run(() => ValidateUpdateApk(update));
             File.WriteAllText(UpdateMetadataPath, JsonSerializer.Serialize(update, UpdateClient.JsonOptions));
             succeeded = true;
         }
-        catch (OperationCanceledException) { if (ActiveUi) Toast.MakeText(this, "Download abgebrochen. Du kannst ihn erneut starten.", ToastLength.Short)?.Show(); }
+        catch (OperationCanceledException) { if (ActiveUi) Toast.MakeText(this, T("Download abgebrochen. Du kannst ihn erneut starten.", "Download cancelled. You can start it again."), ToastLength.Short)?.Show(); }
         catch (Exception ex) { if (ActiveUi) UpdateError(ex.Message); }
         finally
         {
@@ -163,10 +164,10 @@ public sealed partial class MainActivity
     private void ValidateUpdateApk(AvailableUpdate update)
     {
         var archive = PackageManager!.GetPackageArchiveInfo(UpdateApkPath, SigningFlags)
-            ?? throw new InvalidDataException("Die heruntergeladene Datei ist keine gültige Android-APK.");
+            ?? throw new InvalidDataException(T("Die heruntergeladene Datei ist keine gültige Android-APK.", "The downloaded file is not a valid Android APK."));
         if (archive.PackageName != PackageName || VersionCodeOf(archive) != update.Manifest.VersionCode ||
             VersionCodeOf(archive) <= InstalledVersion || archive.VersionName != update.Manifest.VersionName)
-            throw new InvalidDataException("Diese APK passt nicht zur App oder ihrer angekündigten Version.");
+            throw new InvalidDataException(T("Diese APK passt nicht zur App oder ihrer angekündigten Version.", "This APK does not match the app or its announced version."));
         static string[] Signatures(PackageInfo info)
         {
             var signatures = OperatingSystem.IsAndroidVersionAtLeast(28) ? info.SigningInfo?.GetApkContentsSigners() : info.Signatures;
@@ -174,10 +175,10 @@ public sealed partial class MainActivity
         }
         var currentSignatures = Signatures(InstalledPackage);
         if (currentSignatures.Length == 0 || !currentSignatures.SequenceEqual(Signatures(archive)))
-            throw new InvalidDataException("Diese APK ist mit einem anderen Schlüssel signiert und kann die installierte App nicht aktualisieren.");
+            throw new InvalidDataException(T("Diese APK ist mit einem anderen Schlüssel signiert und kann die installierte App nicht aktualisieren.", "This APK is signed with a different key and cannot update the installed app."));
         using var stream = File.OpenRead(UpdateApkPath);
         if (!CryptographicOperations.FixedTimeEquals(SHA256.HashData(stream), Convert.FromHexString(update.Manifest.Sha256)))
-            throw new InvalidDataException("Die APK-Prüfsumme stimmt nicht. Bitte erneut herunterladen.");
+            throw new InvalidDataException(T("Die APK-Prüfsumme stimmt nicht. Bitte erneut herunterladen.", "The APK checksum does not match. Please download it again."));
     }
 
     private async void InstallDownloadedUpdate(AvailableUpdate update)
@@ -190,10 +191,10 @@ public sealed partial class MainActivity
             if (!ActiveUi) return;
             if (!PackageManager!.CanRequestPackageInstalls())
             {
-                new AlertDialog.Builder(this).SetTitle("Update installieren")!
-                    .SetMessage("Erlaube PKHeX Android einmalig „Unbekannte Apps installieren“. Danach zeigt Android die Installation des Updates an.")!
-                    .SetNegativeButton("Später", (_, _) => { })!
-                    .SetPositiveButton("Einstellungen öffnen", (_, _) => Safe(() => StartActivityForResult(
+                new AlertDialog.Builder(this).SetTitle(T("Update installieren", "Install update"))!
+                    .SetMessage(T("Erlaube PKHeX Android einmalig „Unbekannte Apps installieren“. Danach zeigt Android die Installation des Updates an.", "Allow PKHeX Android to “Install unknown apps”. Android will then show the update installation."))!
+                    .SetNegativeButton(T("Später", "Later"), (_, _) => { })!
+                    .SetPositiveButton(T("Einstellungen öffnen", "Open settings"), (_, _) => Safe(() => StartActivityForResult(
                         new Intent(Settings.ActionManageUnknownAppSources, Uri.Parse("package:" + PackageName)), InstallPermissionRequest)))?.Show();
                 return;
             }
@@ -218,7 +219,7 @@ public sealed partial class MainActivity
         if (requestCode != InstallPermissionRequest) return false;
         Safe(() =>
         {
-            if (!PackageManager!.CanRequestPackageInstalls()) { Toast.MakeText(this, "Installation nicht freigegeben. Die APK bleibt für später verfügbar.", ToastLength.Long)?.Show(); return; }
+            if (!PackageManager!.CanRequestPackageInstalls()) { Toast.MakeText(this, T("Installation nicht freigegeben. Die APK bleibt für später verfügbar.", "Installation was not allowed. The APK remains available for later."), ToastLength.Long)?.Show(); return; }
             var source = UpdateSource.Parse(UpdateRepository());
             if (DownloadedUpdate(source) is { } update) InstallDownloadedUpdate(update);
         });
@@ -227,10 +228,10 @@ public sealed partial class MainActivity
 
     private void UpdateError(string message, AvailableUpdate? downloaded = null)
     {
-        var builder = new AlertDialog.Builder(this).SetTitle("Update nicht möglich")!
-            .SetMessage(message + "\n\nFür Updates wird eine Internetverbindung benötigt. Deine Spielstände bleiben auf dem Gerät.")!
-            .SetNeutralButton("Quelle ändern", (_, _) => ConfigureUpdateSource())!.SetPositiveButton("OK", (_, _) => { })!;
-        if (downloaded is not null) builder.SetNegativeButton("APK installieren", (_, _) => InstallDownloadedUpdate(downloaded));
+        var builder = new AlertDialog.Builder(this).SetTitle(T("Update nicht möglich", "Update unavailable"))!
+            .SetMessage(message + T("\n\nFür Updates wird eine Internetverbindung benötigt. Deine Spielstände bleiben auf dem Gerät.", "\n\nUpdates require an internet connection. Your save files stay on your device."))!
+            .SetNeutralButton(T("Quelle ändern", "Change source"), (_, _) => ConfigureUpdateSource())!.SetPositiveButton("OK", (_, _) => { })!;
+        if (downloaded is not null) builder.SetNegativeButton(T("APK installieren", "Install APK"), (_, _) => InstallDownloadedUpdate(downloaded));
         builder.Show();
     }
 }

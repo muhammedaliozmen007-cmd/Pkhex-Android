@@ -5,8 +5,8 @@
     <OutputType>Exe</OutputType>
     <ApplicationId>org.pkhex.android.community</ApplicationId>
     <ApplicationTitle>PKHeX Android</ApplicationTitle>
-    <ApplicationVersion>5</ApplicationVersion>
-    <ApplicationDisplayVersion>0.4.1</ApplicationDisplayVersion>
+    <ApplicationVersion>6</ApplicationVersion>
+    <ApplicationDisplayVersion>0.4.2</ApplicationDisplayVersion>
     <RuntimeIdentifiers>android-arm64;android-arm;android-x64</RuntimeIdentifiers>
     <AndroidPackageFormats>apk</AndroidPackageFormats>
     <Nullable>enable</Nullable>

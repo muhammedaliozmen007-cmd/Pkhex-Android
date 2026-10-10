@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using PKHeX.Android.Updates;
+using PKHeX.Android.Localization;
 
 var passed = 0;
 void Check(bool value, string name) { if (!value) throw new Exception(name); passed++; }
@@ -92,7 +93,14 @@ try
         await Reject(() => new UpdateClient(http).DownloadAsync(update with { DownloadUrl = "https://github.com/other/repo/releases/download/v1/app.apk" }, destination), "Cross-repository download");
 }
 finally { Directory.Delete(directory, true); }
-Console.WriteLine($"{passed} Update-Prüfungen bestanden.");
+foreach (var (language, expected) in new[] { ("de", "Bitte einen gültigen Repository-Namen eingeben."), ("en", "Please enter a valid repository name.") })
+{
+    AppText.Language = language;
+    try { UpdateSource.Parse("owner/.git"); throw new Exception("Invalid repository accepted"); }
+    catch (ArgumentException ex) { Check(ex.Message == expected, "Localized update source error: " + language); }
+}
+AppText.Language = "de";
+Console.WriteLine($"{passed} update checks passed.");
 
 sealed class FakeHandler(Func<HttpRequestMessage, HttpResponseMessage> handle) : HttpMessageHandler
 {

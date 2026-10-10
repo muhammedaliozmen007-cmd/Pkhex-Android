@@ -1,173 +1,189 @@
-# PKHeX Android 0.4.1 — inoffizieller Community-Port
+# PKHeX Android 0.4.2 — unofficial community port
 
-Eine native Android-Oberfläche mit dem unveränderten **PKHeX.Core** aus
-https://github.com/kwsch/PKHeX, Quellstand
+A native Android interface built around the unmodified **PKHeX.Core** from
+[kwsch/PKHeX](https://github.com/kwsch/PKHeX), revision
 `66ef5983a5d349efa2dd615f2926a1b1ee97306e`.
 
-Diese Android-Version enthält grundlegende Editoren und eine für Smartphones
-überarbeitete Oberfläche mit offline verfügbaren Pokémon-Bildern. Sie ist kein offizieller
-Release von Kaphotics und hat noch nicht den vollständigen Funktionsumfang der
-Windows-Anwendung.
+This community port provides basic editors, a phone-friendly interface and offline
+Pokémon artwork. It is not an official release by Kaphotics and does not yet
+include every feature of the Windows application.
 
-## Repository und APK-Downloads
+## Repository and APK downloads
 
-Das vollständige Projekt wird auf `main` in
-[muhammedaliozmen007-cmd/Pkhex-Android](https://github.com/muhammedaliozmen007-cmd/Pkhex-Android)
-gepflegt. Die Ordner `App/`, `Editor/`, `Updates/`, `Tests/`, `UpdateTests/`,
-`upstream/`, die Pokémon-Bilder und die Build-Skripte
-sind enthalten.
+The complete project is maintained on `main` in
+[muhammedaliozmen007-cmd/Pkhex-Android](https://github.com/muhammedaliozmen007-cmd/Pkhex-Android).
+It includes `App/`, `Editor/`, `Localization/`, `Updates/`, `Tests/`, `UpdateTests/`,
+`upstream/`, Pokémon artwork and build scripts.
 
-Signierschlüssel gehören nicht in dieses öffentliche Repository. Für APK-Releases
-die vier in [UPDATES.md](UPDATES.md) beschriebenen GitHub-Actions-Secrets hinterlegen.
+APKs, update manifests and complete source archives are published under
+[Releases](https://github.com/muhammedaliozmen007-cmd/Pkhex-Android/releases).
+The [Android build workflow](https://github.com/muhammedaliozmen007-cmd/Pkhex-Android/actions/workflows/android-release.yml)
+requires the four private signing secrets described in [UPDATES.md](UPDATES.md).
+Signing keys must remain outside this public repository.
 
-Neue APKs, das Update-Manifest und der vollständige Quellcode erscheinen nach
-einem erfolgreichen [Android-Build](https://github.com/muhammedaliozmen007-cmd/Pkhex-Android/actions/workflows/android-release.yml)
-unter [Releases](https://github.com/muhammedaliozmen007-cmd/Pkhex-Android/releases).
-In einer bereits installierten APK einmalig unter **☰ → Update** diese
-Repository-URL eintragen. Künftig vom Workflow gebaute APKs enthalten sie bereits.
+Use **☰ → Update** to check for a newer APK. Version 0.4.2 includes this repository
+as its default update source. Older installations may need the repository URL
+entered once. The update source can also be changed in the update dialog.
 
-## Installation und Benutzung
+## Installation and use
 
-- Android **8.0 oder neuer**. ARM64, ARM32 und x86-64 sind in einer APK enthalten.
-- `PKHeX-Android-0.4.1.apk` auf das Gerät laden, öffnen und für die verwendete
-  Download-/Datei-App bei Bedarf „Unbekannte Apps installieren“ erlauben.
-- „Datei öffnen“ wählen: einen entschlüsselten Spielstand oder eine Pokémon-Datei.
-  Die App liest Dateien über den Android-Dateidialog. Es sind keine allgemeinen
-  Speicherberechtigungen erforderlich.
-- In einem Spielstand: Box oder Team und anschließend einen Platz auswählen.
-- Ein freier Platz bietet **„Pokémon erstellen“** und optional „Pokémon importieren“.
-  Zum Erstellen eine verfügbare Art wählen, die Felder bearbeiten und **„Übernehmen“**
-  antippen. Auch ein leeres Team zeigt einen freien Platz; maximal sechs Pokémon.
-- Änderungen mit „Übernehmen“ bestätigen. Anschließend „Exportieren“
-  verwenden und eine neue Ausgabedatei auswählen.
-- „Original sichern“ schreibt eine bytegenaue Kopie der ursprünglich importierten
-  Datei. „Zurücksetzen“ stellt diese Datei wieder her. Die letzten drei übernommenen
-  Änderungen lassen sich während der laufenden Sitzung rückgängig machen.
-- Das exportierte Ergebnis im Emulator bzw. auf der Konsole wieder importieren.
-  Die App extrahiert keine Spielstände aus verschlüsselten Konsolen-Backups und
-  greift nicht direkt auf Spiele oder Emulatoren zu.
+- Requires **Android 8.0 or newer**. One APK supports ARM64, ARM32 and x86-64.
+- Download the APK from Releases, open it and allow the download/file app to
+  install unknown apps if Android asks.
+- Tap **Open** and select a decrypted save file or an individual Pokémon file.
+  Android's document picker handles file access; broad storage permissions are
+  not required.
+- In a save file, select a box or the party, then select a slot.
+- Empty slots offer **Create Pokémon** and optional **Import Pokémon**. Choose an
+  available species, edit its fields and tap **Apply**. An empty party also shows
+  its next available slot, up to six Pokémon.
+- Tap **Apply** to commit edits, then **Export** and choose a new output file.
+- **Back up original** exports an exact copy of the imported file. **Restore
+  original** discards changes. The three most recent committed edits can be undone
+  during the current session.
+- Import the exported file back into your emulator or console using its usual
+  tools. The app cannot extract encrypted console backups or access a running
+  game or emulator directly.
 
-## Neu in Version 0.4.1
+## Language selection
 
-- Fehler beim Öffnen und Aktualisieren der Listen für Wesen, Items, Fähigkeiten
-  und Attacken behoben. Der gemeinsame Listenadapter verwendet veränderbare Daten.
-- Wiederholte Suchwechsel und leere Trefferlisten unterstützen; verspätete Klicks
-  außerhalb der aktuellen Trefferliste ignorieren.
-- Die APK kann über die bisherige Testversion installiert werden; Paketkennung
-  und Entwicklungsschlüssel bleiben gleich.
+Open **☰ → Sprache / Language** and choose **Deutsch** or **English**.
+The interface updates immediately and remembers your choice after restarting.
+On first launch, German device languages select German; other languages use English.
 
-## Pokémon-Erstellung seit Version 0.4.0
+The selected language applies to menus, dialogs, editor labels, Pokémon species,
+items, abilities, moves, natures, types, forms and legality reports. Switching
+languages preserves the open file, selected slot, editor tab and uncommitted
+inputs, including new Pokémon drafts. It does not change the language stored in
+an existing Pokémon, its nickname or its trainer name. System file pickers and
+the Android installer follow the device's system language; release notes use the
+language provided by the release publisher.
 
-- Pokémon in freien Box- und Teamplätzen direkt erstellen, ohne eine Pokémon-Datei
-  zu importieren. Die Artenauswahl zeigt die im geöffneten Spiel verfügbaren Basisformen.
-- Ein neues Pokémon beginnt als Entwurf mit Level 5, passenden Level-Attacken,
-  Trainerdaten aus dem Spielstand und bearbeitbaren Werten.
-- Erst „Übernehmen“ schreibt in den Spielstand. Beim Verlassen kann der Entwurf
-  übernommen, verworfen oder weiterbearbeitet werden.
-- Auch neue Entwürfe samt Eingaben nach einem App-Neustart wiederherstellen.
-- Erstellen lässt sich rückgängig machen. Originaldatei und andere Plätze bleiben
-  beim Anlegen eines Entwurfs erhalten. Teamplätze werden ohne Lücken ergänzt.
-- Pokémon weiterhin optional importieren oder als einzelne Datei exportieren.
+## Changes in 0.4.2
 
-## Updates und Optimierungen seit Version 0.3.0
+- Persistent German/English language selector available from the menu, including
+  before opening a file.
+- Localized interface, editor/update validation messages and PKHeX.Core names and
+  legality reports.
+- Preserve uncommitted input when changing language without applying or discarding it.
+- English README and a preconfigured update source.
+- Version code increased to 6, with the same package ID and signing key for upgrades.
 
-- **☰ → Update** prüft künftige Versionen und lädt die neueste APK mit
-  Fortschrittsanzeige, Abbruchmöglichkeit und anschließender Android-Installation.
-- Eine Update-Quelle einmalig in der App einrichten:
-  `https://github.com/muhammedaliozmen007-cmd/Pkhex-Android`.
-  Der enthaltene Release-Workflow veröffentlicht nach erfolgreichem Build
-  neue APKs. Anleitung: [UPDATES.md](UPDATES.md).
-- „Über die App“ aus dem Menü entfernt.
-- Pokémon-Bilder außerhalb des Hauptthreads laden, für kleine Darstellungen
-  passend verkleinern und in einem begrenzten LRU-Cache halten.
-- Die Pokémon-Auswahlliste verwendet ihre Zeilen erneut und fasst schnelle
-  Sucheingaben zusammen. Editor-Eingaben laden unveränderte Bilder nicht neu.
-- Bildanforderungen für wiederverwendete Listenzeilen beim schnellen Scrollen abbrechen.
-- Kopfzeile und Scroll-Container bleiben bei Ansichtswechseln erhalten.
-- Box- und Tab-Wechsel schreiben den unveränderten Spielstand nicht erneut.
-- Unveränderte Spielstände bei der Navigation nicht wiederholt auf Prüfsummen prüfen.
+## Features introduced in earlier versions
 
-## Bilder und Oberfläche seit Version 0.2.0
+### 0.4.1: selection list fix
 
-- Bebilderte Boxübersicht und große Pokémon-Vorschau im Editor.
-- HOME-Bilder für alle 1.025 Arten; verfügbare Shiny- und weibliche Varianten.
-- Bild und Typanzeige aktualisieren sich beim Ändern der Art oder Shiny-Auswahl.
-- Vier Editorbereiche: Basis, Attacken, Werte und Infos.
-- Kompakte IV-/EV-Tabelle mit EV-Gesamtsumme.
-- Feste Schaltflächen zum Übernehmen und Exportieren, Suchliste mit Pokémon-Bildern.
-- Eine klar gekennzeichnete Vorschau mit 20 Beispiel-Pokémon. Diese synthetischen
-  Beispieldaten sind kein spielbarer Komplett-Spielstand.
-- Neues App-Symbol, klarere Karten, Navigation und Dialoge.
+Fixed `Java.Lang.UnsupportedOperationException` in nature, item, ability and all
+four move selection lists. The shared list adapter now owns mutable data.
+Repeated searches and empty results are supported; delayed taps outside the
+current result list are ignored.
 
-## Enthalten
+### 0.4.0: create Pokémon in the app
 
-- Import und Erkennung über die originale PKHeX.Core-Bibliothek.
-- Box- und Teamübersicht, Pokémon-Erstellung und optionaler Import in freie Plätze.
-- Einzelne Pokémon-Dateien separat öffnen und exportieren.
-- Art, Spitzname, Level, Item, Wesen, Fähigkeit, Shiny, vier Attacken, IV/DV und EV.
-- Trainername und Geld, sofern das jeweilige Spiel diese Eigenschaften bereitstellt.
-- Deutsche Pokémon-Namen und deutsche Legalitätsberichte aus PKHeX.Core.
-- Wertebereiche, EV-Gesamtsumme, geschützte Plätze und Spielverfügbarkeit prüfen.
-- Korrekte Dateiformate und Prüfsummen über die originalen Core-Schreibfunktionen.
-- Sitzung und noch nicht übernommene Eingabefelder lokal wiederherstellen.
-- Spielstände bleiben lokal, kein Konto erforderlich. Nur die ausdrücklich
-  gestartete Update-Prüfung und der APK-Download greifen auf das Internet zu.
+Create Pokémon directly in empty box or party slots without importing a Pokémon
+file. The species picker shows base forms available in the current game. New
+Pokémon begin as editable level-5 drafts with trainer data from the save and
+appropriate level-up moves.
 
-## Grenzen dieser Version
+Only **Apply** writes a draft into the save. When leaving the editor, you can
+apply it, discard it or keep editing. Drafts and entered values are restored after
+restarting the app. Creation supports undo; party members are added without gaps.
+Individual Pokémon import and export remain available.
 
-- Kein vollständiger Desktop-Klon: spezielle Event-, Inventar-, Pokédex-, Ribbon-,
-  Begegnungs- und spielabhängige Editoren sind noch nicht enthalten.
-- 468 Formzuordnungen für die Bilder. Für weitere Formen wird die Basisabbildung
-  gezeigt; der Editor weist darauf hin. Nicht jede Spezialvariante besitzt ein
-  eigenes Bild. Die Bildquelle ist in `third-party/POKEMON-ARTWORK.md` dokumentiert.
-- Bestehende Formen bleiben erhalten; ein Wechsel der Art setzt die Form auf 0.
-- Keine automatische Konvertierung zwischen Pokémon-Generationen. Der Import in
-  einen Spielstand verlangt das passende Pokémon-Format und eine verfügbare Art/Form.
-- Änderungen machen ein Pokémon nicht automatisch legal. Den Legalitätsbericht prüfen.
-- In Generation 1/2 sind KP-DVs sowie Spezialwerte gekoppelt; in Generation 2 ist
-  Shiny an DVs gebunden und kann deren Werte verändern.
-- In Generation 1/2 speichert das Spiel Box-Pokémon als zusammenhängende Liste;
-  leere Lücken werden beim Export durch PKHeX.Core entfernt.
-- Der Import ist auf 32 MiB begrenzt. Originale werden nur im privaten App-Speicher
-  für die zuletzt geöffnete Sitzung gehalten. Für eine dauerhafte Sicherung
-  „Original sichern“ verwenden. Android deinstallieren/App-Daten löschen entfernt die Sitzung.
-- Die APK ist als persönliche Testversion mit einem Entwicklungs-
-  schlüssel signiert. Dieser Schlüssel eignet sich nicht für eine öffentliche
-  Store-Veröffentlichung. Für eine eigene Veröffentlichung einen privaten Schlüssel
-  erzeugen und die Signierparameter ändern; für dessen erste Installation muss
-  diese Testversion gegebenenfalls deinstalliert werden.
+### 0.3.0: updates and performance
 
-## Quellcode und Lizenz
+The **Update** action checks public GitHub releases, downloads the newest APK
+with progress and cancellation, verifies it and opens Android's installer.
+See [UPDATES.md](UPDATES.md) for publishing instructions. The former About action
+was removed from the menu.
 
-`upstream/PKHeX.Core/` enthält den vollständigen verwendeten Core einschließlich
-seiner eingebetteten Ressourcen. `upstream/Directory.Build.props`,
-`upstream/COMMIT.txt` und `upstream/LICENSE` halten Version und Herkunft fest.
-PKHeX.Core ist von Kaphotics und den PKHeX-Mitwirkenden. Die neue Android-Oberfläche
-und Bearbeitungslogik in diesem Paket werden ebenfalls unter **GPL-3.0-or-later**
-bereitgestellt. Siehe `LICENSE`. Quellcode und APK dürfen nach dieser Lizenz
-weitergegeben und verändert werden; bei einer Weitergabe auch den entsprechenden
-Quellcode und die Lizenz bereitstellen.
+Artwork loads off the main thread, is scaled for its target view and uses a bounded
+LRU cache. Species rows are reused, rapid searches are debounced and obsolete
+image requests are cancelled. Unchanged previews do not reload their images.
+Navigation retains the header and scroll container, and does not repeatedly write
+or checksum an unchanged save file.
 
-## Lokal bauen
+### 0.2.0: artwork and editor layout
 
-Voraussetzungen: .NET SDK 10.0, .NET-Android-Workload, JDK 21 und Android SDK
-mit Plattform 36 sowie Build-Tools 36.0.0.
+Offline HOME artwork covers all 1,025 species, with available shiny and female
+variants. Box thumbnails and large editor previews update when the species or
+shiny selection changes. Four editor tabs organize basic fields, moves, stats and
+information. A compact IV/EV table shows the EV total; Apply and Export remain
+accessible in the fixed footer.
+
+A clearly marked preview contains 20 example Pokémon. These synthetic examples
+are not a complete playable save file.
+
+## Included functionality
+
+- Import and format detection using the original PKHeX.Core library.
+- Box and party browsing, Pokémon creation and optional slot import.
+- Open and export individual Pokémon files.
+- Edit species, nickname, level, held item, nature, ability, shiny status, four
+  moves, IVs/DVs and EVs.
+- Edit trainer name and money where the game supports these properties.
+- German and English Pokémon names and legality reports from PKHeX.Core.
+- Validate value ranges, EV totals, protected slots and game availability.
+- Write the appropriate formats and checksums using Core's original functions.
+- Restore the session and uncommitted editor fields locally.
+- No account required. Save files stay on the device. Only an explicitly started
+  update check or APK download accesses the internet.
+
+## Limitations
+
+- This is not a complete desktop clone. Specialized event, inventory, Pokédex,
+  ribbon, encounter and game-specific editors are not included yet.
+- There are 468 artwork form mappings. Other forms use base artwork and display
+  a notice in the editor. Not every special variant has its own image. Artwork
+  sources are documented in [third-party/POKEMON-ARTWORK.md](third-party/POKEMON-ARTWORK.md).
+- Existing forms are retained; changing the species resets the form to 0.
+- There is no automatic conversion between Pokémon generations. Importing into
+  a save requires the matching Pokémon format and an available species/form.
+- Editing or creating a Pokémon does not automatically make it legal. Check its
+  legality report.
+- In Generations 1 and 2, HP DVs and Special stats are linked. In Generation 2,
+  shiny status depends on DVs and may change their values.
+- In Generations 1 and 2, box Pokémon are stored as contiguous lists; PKHeX.Core
+  removes empty gaps when exporting.
+- Imports are limited to 32 MiB. The original file is kept in private app storage
+  for the most recently opened session. Use **Back up original** for a permanent
+  backup. Uninstalling the app or clearing its data removes the local session.
+- The APK is a personal test build signed with a development key. For your own
+  public/store release, generate a private signing key and change the signing
+  configuration. A build signed with a different key cannot update this test
+  build in place and may require uninstalling it first.
+
+## Source and license
+
+`upstream/PKHeX.Core/` contains the complete Core used by the app, including its
+embedded resources. `upstream/Directory.Build.props`, `upstream/COMMIT.txt` and
+`upstream/LICENSE` record its version and origin.
+
+PKHeX.Core is by Kaphotics and the PKHeX contributors. The Android interface and
+editing logic are also distributed under **GPL-3.0-or-later**; see [LICENSE](LICENSE).
+You may modify and redistribute the source and APK under that license. When
+redistributing a build, provide the corresponding source code and license as well.
+
+## Build locally
+
+Requirements: .NET SDK 10.0, the .NET Android workload, JDK 21, and Android SDK
+platform 36 with Build-Tools 36.0.0.
 
 ```bash
 dotnet workload install android
 dotnet run --project Tests/Tests.csproj -c Release
 dotnet run --project UpdateTests/UpdateTests.csproj -c Release
-export ANDROID_SDK_ROOT=/pfad/zum/android-sdk
-export JAVA_HOME=/pfad/zum/jdk-21
-export ANDROID_SIGNING_KEYSTORE=/privater/pfad/zum/schluessel.keystore
+export ANDROID_SDK_ROOT=/path/to/android-sdk
+export JAVA_HOME=/path/to/jdk-21
+export ANDROID_SIGNING_KEYSTORE=/private/path/to/release.keystore
 export ANDROID_SIGNING_KEY_ALIAS=pkhex
-# ANDROID_SIGNING_STORE_PASS und ANDROID_SIGNING_KEY_PASS privat setzen.
+# Set ANDROID_SIGNING_STORE_PASS and ANDROID_SIGNING_KEY_PASS privately.
 bash scripts/build.sh
 ```
 
-Die signierte APK liegt danach unter
+The signed APK is written to
 `App/bin/Release/net10.0-android/org.pkhex.android.community-Signed.apk`.
 
-Die Tests erzeugen synthetische Pokémon- und Spielstanddateien. Diese Dateien
-dienen nur zur Prüfung des Dateiformats und sind keine spielbaren Komplett-Spielstände.
-Die tatsächlichen Prüfergebnisse der ausgelieferten Version stehen in `VALIDATION.md`.
+Tests generate synthetic Pokémon and save files to check format handling. They
+are not complete playable saves. See [VALIDATION.md](VALIDATION.md) for the checks
+performed on the distributed build.

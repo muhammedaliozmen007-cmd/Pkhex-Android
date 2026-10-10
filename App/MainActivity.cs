@@ -1,3 +1,5 @@
+using static PKHeX.Android.Localization.AppText;
+using AppText = PKHeX.Android.Localization.AppText;
 using Android.App;
 using Android.Content;
 using Android.Content.PM;
@@ -25,7 +27,7 @@ public sealed partial class MainActivity : Activity
     private static readonly AColor Background = AColor.Rgb(10, 17, 29), Surface = AColor.Rgb(20, 31, 48),
         Muted = AColor.Rgb(148, 166, 188), Accent = AColor.Rgb(77, 224, 197);
     private EditorSession? session;
-    private readonly GameStrings strings = GameInfo.GetStrings("de");
+    private GameStrings strings = GameInfo.GetStrings("de");
     private LinearLayout root = null!, content = null!;
     private readonly Dictionary<string, EditText> fields = [];
     private readonly Dictionary<string, int> choices = [];
@@ -46,6 +48,8 @@ public sealed partial class MainActivity : Activity
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
+        SetUiLanguage(GetSharedPreferences("settings", FileCreationMode.Private)!.GetString("language", null)
+            ?? Java.Util.Locale.Default?.Language ?? "en");
         StoredSession? stored = null;
         try
         {
@@ -64,17 +68,8 @@ public sealed partial class MainActivity : Activity
         }
         catch { session = null; slot = -1; creationDraft = null; }
         Render();
-        if (stored?.DraftDirty is true && selected is not null)
-        {
-            building = true;
-            if (stored.Choices is not null) foreach (var pair in stored.Choices) choices[pair.Key] = pair.Value;
-            if (stored.Fields is not null) foreach (var pair in stored.Fields) if (fields.TryGetValue(pair.Key, out var f)) f.Text = pair.Value;
-            if (nicknamed is not null) nicknamed.Checked = stored.Nicknamed;
-            if (shiny is not null) shiny.Checked = stored.Shiny;
-            building = false; draftDirty = true;
-            // Render the selected names as well as their underlying IDs.
-            RefreshChoiceLabels();
-        }
+        if (stored?.DraftDirty is true)
+            RestoreEditorInputs(stored.Fields, stored.Choices, stored.Nicknamed, stored.Shiny);
     }
 
     protected override void OnPause()
@@ -105,7 +100,7 @@ public sealed partial class MainActivity : Activity
                 creationDraft is null ? null : EditorSession.ExportEntity(creationDraft));
             AtomicWrite("session.json", System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(stored)));
         }
-        catch (Exception ex) { Toast.MakeText(this, "Sitzung konnte nicht gespeichert werden: " + ex.Message, ToastLength.Long)?.Show(); }
+        catch (Exception ex) { Toast.MakeText(this, T("Sitzung konnte nicht gespeichert werden: ", "Could not save the session: ") + ex.Message, ToastLength.Long)?.Show(); }
     }
 
     private void AtomicWrite(string name, byte[] data)
@@ -118,23 +113,23 @@ public sealed partial class MainActivity : Activity
     {
         try { action(); } catch (Exception ex) { Error(ex.Message); }
     }
-    private void Error(string message) => new AlertDialog.Builder(this).SetTitle("Bitte prüfen")!.SetMessage(message)!.SetPositiveButton("OK", (_, _) => { })?.Show();
+    private void Error(string message) => new AlertDialog.Builder(this).SetTitle(T("Bitte prüfen", "Please check"))!.SetMessage(message)!.SetPositiveButton("OK", (_, _) => { })?.Show();
     private void Confirm(string title, string message, Action yes) => new AlertDialog.Builder(this).SetTitle(title)!.SetMessage(message)!
-        .SetNegativeButton("Abbrechen", (_, _) => { })!.SetPositiveButton("Fortfahren", (_, _) => Safe(yes))?.Show();
+        .SetNegativeButton(T("Abbrechen", "Cancel"), (_, _) => { })!.SetPositiveButton(T("Fortfahren", "Continue"), (_, _) => Safe(yes))?.Show();
     private void Navigate(Action next)
     {
         if (!draftDirty) { next(); return; }
-        new AlertDialog.Builder(this).SetTitle(creationDraft is null ? "Pokémon geändert" : "Neues Pokémon")!
-            .SetMessage(creationDraft is null ? "Änderungen vor dem Wechsel übernehmen?" : "Neues Pokémon vor dem Wechsel in den freien Platz speichern?")!
-            .SetNegativeButton("Abbrechen", (_, _) => { })!
-            .SetNeutralButton("Verwerfen", (_, _) => { draftDirty = false; creationDraft = null; Safe(next); })!
-            .SetPositiveButton("Übernehmen", (_, _) => Safe(() => { CommitDraft(); next(); }))?.Show();
+        new AlertDialog.Builder(this).SetTitle(creationDraft is null ? T("Pokémon geändert", "Pokémon changed") : T("Neues Pokémon", "New Pokémon"))!
+            .SetMessage(creationDraft is null ? T("Änderungen vor dem Wechsel übernehmen?", "Apply changes before leaving?") : T("Neues Pokémon vor dem Wechsel in den freien Platz speichern?", "Save the new Pokémon to the empty slot before leaving?"))!
+            .SetNegativeButton(T("Abbrechen", "Cancel"), (_, _) => { })!
+            .SetNeutralButton(T("Verwerfen", "Discard"), (_, _) => { draftDirty = false; creationDraft = null; Safe(next); })!
+            .SetPositiveButton(T("Übernehmen", "Apply"), (_, _) => Safe(() => { CommitDraft(); next(); }))?.Show();
     }
 
     private PokemonEdit ReadDraft()
     {
-        var pk = selected ?? throw new InvalidOperationException("Kein Pokémon ausgewählt.");
-        int Number(string key) => int.TryParse(fields[key].Text, out var n) ? n : throw new ArgumentException("Bitte alle Zahlenfelder gültig ausfüllen.");
+        var pk = selected ?? throw new InvalidOperationException(T("Kein Pokémon ausgewählt.", "No Pokémon selected."));
+        int Number(string key) => int.TryParse(fields[key].Text, out var n) ? n : throw new ArgumentException(T("Bitte alle Zahlenfelder gültig ausfüllen.", "Please enter valid numbers in all numeric fields."));
         var level = Number("level"); if (level is < 1 or > 100) throw new ArgumentException("Level: 1–100.");
         return new PokemonEdit((ushort)choices["species"], fields["nickname"].Text ?? "", nicknamed!.Checked, (byte)level,
             choices.GetValueOrDefault("item", pk.HeldItem), (Nature)choices.GetValueOrDefault("nature", (int)pk.Nature),
@@ -153,14 +148,14 @@ public sealed partial class MainActivity : Activity
     {
         try
         {
-            var pk = DraftEntity(); var table = session!.Save?.Personal;
+            var pk = DraftEntity(); var table = session!.Save?.Personal; var reportLanguage = AppText.Language;
             var progressView = Column(); progressView.SetPadding(D(20), D(12), D(20), D(12));
-            progressView.AddView(new ProgressBar(this)); progressView.AddView(Text("PKHeX.Core prüft das Pokémon …", 14));
-            using var progress = new AlertDialog.Builder(this).SetTitle("Legalität")!.SetView(progressView)!.SetCancelable(false)!.Create()!;
+            progressView.AddView(new ProgressBar(this)); progressView.AddView(Text(T("PKHeX.Core prüft das Pokémon …", "PKHeX.Core is checking the Pokémon …"), 14));
+            using var progress = new AlertDialog.Builder(this).SetTitle(T("Legalität", "Legality"))!.SetView(progressView)!.SetCancelable(false)!.Create()!;
             progress.Show();
-            var report = await Task.Run(() => { var analysis = table is null ? new LegalityAnalysis(pk) : new LegalityAnalysis(pk, table); return analysis.Report("de", true); });
+            var report = await Task.Run(() => { var analysis = table is null ? new LegalityAnalysis(pk) : new LegalityAnalysis(pk, table); return analysis.Report(reportLanguage, true); });
             progress?.Dismiss();
-            new AlertDialog.Builder(this).SetTitle("Legalitätsbericht")!.SetMessage(report)!.SetPositiveButton("OK", (_, _) => { })?.Show();
+            new AlertDialog.Builder(this).SetTitle(T("Legalitätsbericht", "Legality report"))!.SetMessage(report)!.SetPositiveButton("OK", (_, _) => { })?.Show();
         }
         catch (Exception ex) { Error(ex.Message); }
     }
@@ -178,17 +173,17 @@ public sealed partial class MainActivity : Activity
             // Keep the underlying editor consistent if this dialog is cancelled.
             Render(); Persist();
             var sav = session!.Save!; var panel = Column(); panel.SetPadding(D(18), D(8), D(18), 0);
-            var name = new EditText(this) { Text = sav.OT, Hint = "Trainername" }; name.SetSingleLine(true); panel.AddView(name);
-            var money = new EditText(this) { Text = sav.Money.ToString(), Hint = "Geld", InputType = InputTypes.ClassNumber }; panel.AddView(money);
+            var name = new EditText(this) { Text = sav.OT, Hint = T("Trainername", "Trainer name") }; name.SetSingleLine(true); panel.AddView(name);
+            var money = new EditText(this) { Text = sav.Money.ToString(), Hint = T("Geld", "Money"), InputType = InputTypes.ClassNumber }; panel.AddView(money);
             var supportsName = sav.GetType().GetProperty(nameof(SaveFile.OT))?.DeclaringType != typeof(SaveFile);
             var supportsMoney = sav.GetType().GetProperty(nameof(SaveFile.Money))?.DeclaringType != typeof(SaveFile);
             name.Enabled = supportsName; money.Enabled = supportsMoney;
-            panel.AddView(Text($"Name: maximal {sav.MaxStringLengthTrainer} Zeichen\nGeld: 0–{sav.MaxMoney}", 13, true));
-            var dialog = new AlertDialog.Builder(this).SetTitle("Trainer bearbeiten")!.SetView(panel)!
-                .SetNegativeButton("Abbrechen", (_, _) => { })!.SetPositiveButton("Übernehmen", (_, _) => { })!.Create()!;
+            panel.AddView(Text(T($"Name: maximal {sav.MaxStringLengthTrainer} Zeichen\nGeld: 0–{sav.MaxMoney}", $"Name: up to {sav.MaxStringLengthTrainer} characters\nMoney: 0–{sav.MaxMoney}"), 13, true));
+            var dialog = new AlertDialog.Builder(this).SetTitle(T("Trainer bearbeiten", "Edit trainer"))!.SetView(panel)!
+                .SetNegativeButton(T("Abbrechen", "Cancel"), (_, _) => { })!.SetPositiveButton(T("Übernehmen", "Apply"), (_, _) => { })!.Create()!;
             dialog.Show(); dialog.GetButton((int)DialogButtonType.Positive)!.Click += (_, _) => Safe(() =>
             {
-                if (!uint.TryParse(money.Text, out var amount)) throw new ArgumentException("Bitte einen gültigen Geldbetrag eingeben.");
+                if (!uint.TryParse(money.Text, out var amount)) throw new ArgumentException(T("Bitte einen gültigen Geldbetrag eingeben.", "Please enter a valid amount of money."));
                 session.EditTrainer(name.Text ?? "", amount); dialog.Dismiss(); Render(); Persist();
             });
         });
@@ -198,7 +193,7 @@ public sealed partial class MainActivity : Activity
     {
         if (busy) return;
         void PickFile() => LaunchPicker(OpenRequest);
-        if (session?.Dirty is true || draftDirty) Confirm("Andere Datei öffnen", "Die aktuelle Datei hat Änderungen. Exportiere sie vorher, wenn du sie behalten möchtest.", PickFile);
+        if (session?.Dirty is true || draftDirty) Confirm(T("Andere Datei öffnen", "Open another file"), T("Die aktuelle Datei hat Änderungen. Exportiere sie vorher, wenn du sie behalten möchtest.", "The current file has changes. Export it first if you want to keep them."), PickFile);
         else PickFile();
     }
     private void ImportFile()
@@ -210,7 +205,7 @@ public sealed partial class MainActivity : Activity
             // Reflect saved/discarded drafts even if the file picker is cancelled.
             Render(); Persist();
             if (session.GetEntity(box, slot, party).Species != 0)
-                Confirm("Platz ersetzen", "Das Pokémon an diesem Platz wird durch die importierte Datei ersetzt. Die Änderung kann rückgängig gemacht werden.", PickFile);
+                Confirm(T("Platz ersetzen", "Replace slot"), T("Das Pokémon an diesem Platz wird durch die importierte Datei ersetzt. Die Änderung kann rückgängig gemacht werden.", "The imported file will replace the Pokémon in this slot. You can undo this change."), PickFile);
             else PickFile();
         });
     }
@@ -240,11 +235,11 @@ public sealed partial class MainActivity : Activity
     }
     private async Task<byte[]> ReadFile(Uri uri)
     {
-        using var stream = ContentResolver!.OpenInputStream(uri) ?? throw new IOException("Datei nicht lesbar.");
+        using var stream = ContentResolver!.OpenInputStream(uri) ?? throw new IOException(T("Datei nicht lesbar.", "Cannot read the file."));
         using var output = new MemoryStream(); var buffer = new byte[81920]; int read;
         while ((read = await stream.ReadAsync(buffer)) != 0)
         {
-            if (output.Length + read > EditorSession.MaxFileSize) throw new ArgumentException("Die Datei ist größer als 32 MB.");
+            if (output.Length + read > EditorSession.MaxFileSize) throw new ArgumentException(T("Die Datei ist größer als 32 MB.", "The file is larger than 32 MB."));
             await output.WriteAsync(buffer.AsMemory(0, read));
         }
         return output.ToArray();
@@ -270,9 +265,9 @@ public sealed partial class MainActivity : Activity
             if (requestCode == ExportRequest)
             {
                 var bytes = File.ReadAllBytes(DataPath("pending-export.bin"));
-                using var output = ContentResolver!.OpenOutputStream(uri, "wt") ?? throw new IOException("Zieldatei nicht beschreibbar.");
+                using var output = ContentResolver!.OpenOutputStream(uri, "wt") ?? throw new IOException(T("Zieldatei nicht beschreibbar.", "Cannot write to the destination file."));
                 await output.WriteAsync(bytes); await output.FlushAsync(); File.Delete(DataPath("pending-export.bin"));
-                Toast.MakeText(this, "Datei exportiert", ToastLength.Long)?.Show(); return;
+                Toast.MakeText(this, T("Datei exportiert", "File exported"), ToastLength.Long)?.Show(); return;
             }
             var name = FileName(uri); var input = await ReadFile(uri);
             if (requestCode == OpenRequest)
