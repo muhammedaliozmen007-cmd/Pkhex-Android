@@ -40,4 +40,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create language-build-artifact "$RUNNER_TEMP/PKHeX-Android-0.4.2-unsigned.apk" --repo "$GITHUB_REPOSITORY" --target 539ff7be896bcb9fd7f1e95ac34e1973120d1021 --title 'Temporary unsigned build artifact' --notes 'Build artifact for local signing. Do not install. Removed after the signed release is published.' --prerelease --latest=false
+          gh release create language-build-artifact "$RUNNER_TEMP/PKHeX-Android-0.4.2-unsigned.apk" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'Temporary unsigned build artifact' --notes 'Build artifact for local signing. Do not install. Removed after the signed release is published.' --prerelease --latest=false
