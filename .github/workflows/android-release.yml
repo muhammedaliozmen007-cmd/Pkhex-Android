@@ -1,0 +1,71 @@
+name: Android APK and update release
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check private signing configuration
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_SIGNING_KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          STORE_PASS: ${{ secrets.ANDROID_SIGNING_STORE_PASS }}
+          KEY_PASS: ${{ secrets.ANDROID_SIGNING_KEY_PASS }}
+        run: |
+          if [ -z "$KEYSTORE" ] || [ -z "$KEY_ALIAS" ] || [ -z "$STORE_PASS" ] || [ -z "$KEY_PASS" ]; then
+            echo 'Signing secrets missing. See UPDATES.md for the four required repository secrets.' >&2
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.401'
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Android build dependencies
+        run: |
+          dotnet workload install android --skip-manifest-update
+          sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'platform-tools'
+      - name: Configure the update channel and new version
+        run: python3 scripts/prepare_channel.py --repository "$GITHUB_REPOSITORY" --run-number "$GITHUB_RUN_NUMBER"
+      - name: File-format and update tests
+        run: |
+          dotnet run --project Tests/Tests.csproj -c Release -p:SourceRevisionId=66ef5983a5d3 -p:UseSharedCompilation=false
+          dotnet run --project UpdateTests/UpdateTests.csproj -c Release -p:UseSharedCompilation=false
+      - name: Signed APK
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_SIGNING_KEYSTORE_BASE64 }}
+          ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          ANDROID_SIGNING_STORE_PASS: ${{ secrets.ANDROID_SIGNING_STORE_PASS }}
+          ANDROID_SIGNING_KEY_PASS: ${{ secrets.ANDROID_SIGNING_KEY_PASS }}
+        run: |
+          export ANDROID_SIGNING_KEYSTORE="$RUNNER_TEMP/pkhex-release.keystore"
+          umask 077
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$ANDROID_SIGNING_KEYSTORE"
+          trap 'rm -f "$ANDROID_SIGNING_KEYSTORE"' EXIT
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          bash scripts/build.sh
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify App/bin/Release/net10.0-android/org.pkhex.android.community-Signed.apk
+      - name: APK, update manifest and complete source
+        run: python3 scripts/package_release.py --apk App/bin/Release/net10.0-android/org.pkhex.android.community-Signed.apk --output dist
+      - name: Publish the complete update
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=$(python3 -c 'import json; print(json.load(open("dist/update.json"))["versionName"])')
+          gh release create "v$version" dist/*.apk dist/update.json dist/*-Quellcode.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "PKHeX Android $version" --notes-file dist/release-notes.md --draft
+          gh release edit "v$version" --repo "$GITHUB_REPOSITORY" --draft=false --latest
