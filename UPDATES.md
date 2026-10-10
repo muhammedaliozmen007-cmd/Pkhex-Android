@@ -33,7 +33,7 @@ auch die Einrichtung eines eigenen Forks.
 2. Den Inhalt des Quellcode-Ordners `PKHeX.Android` an die Repository-Wurzel
    übernehmen. `App/`, `upstream/`, `scripts/` und `.github/` müssen dort liegen.
 3. GitHub Actions für das Repository aktivieren. Der enthaltene Workflow baut
-   bei Änderungen auf `main` oder `master` eine neue APK, führt die Datei- und
+   bei Änderungen am App-Code (`App/`, `Editor/`, `Localization/`, `Updates/`, `upstream/`, `global.json`) auf `main` oder `master` eine neue APK, führt die Datei- und
    Update-Prüfungen aus und veröffentlicht APK, `update.json` und den vollständigen
    Quellcode gemeinsam. Ein Release wird erst nach dem Hochladen aller Dateien
    aus dem Entwurfsstatus veröffentlicht.
@@ -49,7 +49,7 @@ Basisversionen und Versionscodes im Projekt müssen aufsteigend gepflegt werden.
 
 Die Release-Notizen (Release-Text und `notes` in `update.json`) stammen aus
 `CHANGELOG.md`: aus dem Abschnitt mit genau dieser Version, sonst aus dem obersten
-Abschnitt. Vor jedem Push auf `main` daher oben in `CHANGELOG.md` die neuen
+Abschnitt. Vor jedem Push mit App-Änderungen auf `main` daher oben in `CHANGELOG.md` die neuen
 Änderungen eintragen. Mit `--notes "…"` lässt sich der Text manuell vorgeben.
 
 ## Bereits gebaute APK manuell veröffentlichen

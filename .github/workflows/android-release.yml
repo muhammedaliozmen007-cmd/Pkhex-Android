@@ -3,6 +3,15 @@ name: Android APK and update release
 on:
   push:
     branches: [main, master]
+    # Only changes that alter the APK publish a new release. Documentation and
+    # tooling changes do not; use "Run workflow" to release them manually.
+    paths:
+      - 'App/**'
+      - 'Editor/**'
+      - 'Localization/**'
+      - 'Updates/**'
+      - 'upstream/**'
+      - 'global.json'
   workflow_dispatch:
 
 permissions:
