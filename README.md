@@ -8,23 +8,6 @@ This community port provides basic editors, a phone-friendly interface and offli
 Pokémon artwork. It is not an official release by Kaphotics and does not yet
 include every feature of the Windows application.
 
-## Repository and APK downloads
-
-The complete project is maintained on `main` in
-[muhammedaliozmen007-cmd/Pkhex-Android](https://github.com/muhammedaliozmen007-cmd/Pkhex-Android).
-It includes `App/`, `Editor/`, `Localization/`, `Updates/`, `Tests/`, `UpdateTests/`,
-`upstream/`, Pokémon artwork and build scripts.
-
-APKs, update manifests and complete source archives are published under
-[Releases](https://github.com/muhammedaliozmen007-cmd/Pkhex-Android/releases).
-The [Android build workflow](https://github.com/muhammedaliozmen007-cmd/Pkhex-Android/actions/workflows/android-release.yml)
-requires the four private signing secrets described in [UPDATES.md](UPDATES.md).
-Signing keys must remain outside this public repository.
-
-Use **☰ → Update** to check for a newer APK. Version 0.4.2 includes this repository
-as its default update source. Older installations may need the repository URL
-entered once. The update source can also be changed in the update dialog.
-
 ## Installation and use
 
 - Requires **Android 8.0 or newer**. One APK supports ARM64, ARM32 and x86-64.
