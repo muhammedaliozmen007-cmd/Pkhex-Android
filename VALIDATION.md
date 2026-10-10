@@ -3,13 +3,13 @@
 ## Build and package
 
 - Final signed Android Release build: **0 errors, 0 warnings**.
-- .NET SDK 10.0.401, .NET Android 36.1.2, Android SDK/API 36, Build-Tools 36.0.0, JDK 21.0.12.1.
+- .NET SDK 10.0.401, .NET Android 36.1.2, Android SDK/API 36, Build-Tools 36.0.0, JDK 21 (local signing with 21.0.12.1).
 - Package `org.pkhex.android.community`, version **0.4.2**, version code **6**.
 - Minimum Android API 26; target API 36; ARM64, ARM32 and x86-64.
 - Valid APK v2 and v3 signatures, with the same certificate as 0.4.1:
   `9f5116bd6d1d408d8b5d110bdb32b972318523a1d2caa09f74a9bf80fe3624e1`.
 - APK size: **148,912,889 bytes**.
-- APK SHA-256: `0ab53fb6049b4ce72c593aa5ac67058aaddc73eed00bcaa16b72427a7e81e4b2`.
+- APK SHA-256: `a97ef3ec13c1becea2501ab133c5eb286ab35bc560a1b719a77e7d327934661f`.
 - All APK ZIP entries passed integrity checks, including **3,258 offline artwork files**.
 - Embedded update channel points to `muhammedaliozmen007-cmd/Pkhex-Android`.
 

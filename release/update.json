@@ -5,6 +5,6 @@
   "versionName": "0.4.2",
   "apkFile": "PKHeX-Android-0.4.2.apk",
   "sizeBytes": 148912889,
-  "sha256": "0ab53fb6049b4ce72c593aa5ac67058aaddc73eed00bcaa16b72427a7e81e4b2",
+  "sha256": "a97ef3ec13c1becea2501ab133c5eb286ab35bc560a1b719a77e7d327934661f",
   "notes": "German/English language selection in the menu; localized editor and legality reports; drafts preserved when switching languages; English README."
 }
