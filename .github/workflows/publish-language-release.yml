@@ -1,0 +1,67 @@
+name: Publish signed language update
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publish-language-release.yml']
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: e580bdf1f8fd6f3bb77376eea71f31eba5e1e4b8
+      - name: Restore and verify signed APK and complete source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import os, json, base64, gzip, struct, hashlib, subprocess
+          from pathlib import Path
+          from zipfile import ZipFile
+          out = Path(os.environ['RUNNER_TEMP']) / 'language-release'
+          out.mkdir(parents=True, exist_ok=True)
+          subprocess.run(['gh', 'release', 'download', 'language-build-artifact', '--repo', os.environ['GITHUB_REPOSITORY'], '--pattern', 'PKHeX-Android-0.4.2-unsigned.apk', '--dir', str(out)], check=True)
+          old = (out / 'PKHeX-Android-0.4.2-unsigned.apk').read_bytes()
+          assert hashlib.sha256(old).hexdigest() == 'c9ac3f7f8e8c20e5f7e31da135ecbb06a487b5b0fc6bf21166168cac75634660'
+          blob = json.loads(subprocess.check_output(['gh', 'api', '/repos/' + os.environ['GITHUB_REPOSITORY'] + '/git/blobs/bc3bd5f5a4012bb16ceb13991818bf747904ab00']))
+          patch = base64.b64decode(blob['content'])
+          assert hashlib.sha256(patch).hexdigest() == 'd74ac363bd20dd895a6771815d23def28ef76175fc32deb40a9f548867715a21'
+          raw = gzip.decompress(patch)
+          length = struct.unpack_from('<I', raw)[0]
+          meta = json.loads(raw[4:4+length])
+          literal = raw[4+length:]
+          result = bytearray()
+          for kind, offset, size in meta['ops']:
+              assert kind in ('copy', 'data') and offset >= 0 and size >= 0
+              source = old if kind == 'copy' else literal
+              assert offset + size <= len(source)
+              result.extend(source[offset:offset+size])
+          assert len(result) == 148912889
+          assert hashlib.sha256(result).hexdigest() == 'a97ef3ec13c1becea2501ab133c5eb286ab35bc560a1b719a77e7d327934661f'
+          apk = out / 'PKHeX-Android-0.4.2.apk'
+          apk.write_bytes(result)
+          with ZipFile(apk) as z:
+              assert z.testzip() is None
+              assert len([n for n in z.namelist() if n.startswith('assets/art/') and n.endswith('.webp')]) == 3258
+          subprocess.run(['python3', 'scripts/package_release.py', '--apk', str(apk), '--output', str(out / 'published')], check=True)
+          with ZipFile(out / 'published/PKHeX-Android-0.4.2-Quellcode.zip') as z:
+              assert z.testzip() is None
+              assert len(z.namelist()) == 6866
+              assert not any(n.lower().endswith(('.keystore','.jks','.p12','.pfx','.pem','.key')) for n in z.namelist())
+              assert z.read('PKHeX.Android/release/update.json') == Path('release/update.json').read_bytes()
+              assert z.read('PKHeX.Android/README.md') == Path('README.md').read_bytes()
+          PY
+      - name: Publish the signed APK, manifest and source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          output="$RUNNER_TEMP/language-release/published"
+          gh release create v0.4.2 "$output/PKHeX-Android-0.4.2.apk" "$output/update.json" "$output/PKHeX-Android-0.4.2-Quellcode.zip" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title 'PKHeX Android 0.4.2' --notes-file "$output/release-notes.md" --draft
+          gh release edit v0.4.2 --repo "$GITHUB_REPOSITORY" --draft=false --latest
+      - name: Remove temporary unsigned build artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release delete language-build-artifact --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
