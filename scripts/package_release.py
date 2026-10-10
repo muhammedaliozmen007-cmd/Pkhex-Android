@@ -11,6 +11,7 @@ from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile
 parser = argparse.ArgumentParser()
 parser.add_argument('--apk', required=True, type=Path)
 parser.add_argument('--output', required=True, type=Path)
+parser.add_argument('--notes', help='Release notes; defaults to the matching or newest CHANGELOG.md section')
 args = parser.parse_args()
 root = Path(__file__).resolve().parent.parent
 project = ET.parse(root / 'App/App.csproj')
@@ -18,6 +19,34 @@ version = project.findtext('.//ApplicationDisplayVersion')
 code = int(project.findtext('.//ApplicationVersion'))
 package = project.findtext('.//ApplicationId')
 out = args.output.resolve()
+
+
+def changelog_notes(version):
+    """Return the CHANGELOG.md section for this version, or the newest section.
+
+    CI builds raise the patch version by the run number, so their version usually
+    has no own heading; the newest section then describes the pushed changes.
+    """
+    sections = {}
+    current = None
+    for line in (root / 'CHANGELOG.md').read_text(encoding='utf-8').splitlines():
+        if line.startswith('# '):
+            current = line[2:].strip()
+            sections[current] = []
+        elif current is not None:
+            sections[current].append(line)
+    if not sections:
+        parser.error('CHANGELOG.md has no version section; pass --notes')
+    heading = version if version in sections else next(iter(sections))
+    return '\n'.join(sections[heading]).strip()
+
+
+notes = (args.notes if args.notes is not None else changelog_notes(version)).strip()
+if not notes:
+    parser.error('Release notes are empty')
+# The app shows at most 2000 characters of the update notes.
+if len(notes) > 2000:
+    notes = notes[:1999].rstrip() + '…'
 if not args.apk.is_file():
     parser.error('Signed APK not found')
 out.mkdir(parents=True, exist_ok=True)
@@ -31,7 +60,7 @@ manifest = {
     'schema': 1, 'applicationId': package, 'versionCode': code,
     'versionName': version, 'apkFile': name,
     'sizeBytes': apk.stat().st_size, 'sha256': hash_value,
-    'notes': 'German/English language selection in the menu; localized editor and legality reports; drafts preserved when switching languages; English README.'
+    'notes': notes
 }
 text = json.dumps(manifest, ensure_ascii=False, indent=2) + '\n'
 (out / 'update.json').write_text(text, encoding='utf-8')

@@ -52,51 +52,6 @@ language provided by the release publisher.
 - English README and a preconfigured update source.
 - Version code increased to 6, with the same package ID and signing key for upgrades.
 
-## Features introduced in earlier versions
-
-### 0.4.1: selection list fix
-
-Fixed `Java.Lang.UnsupportedOperationException` in nature, item, ability and all
-four move selection lists. The shared list adapter now owns mutable data.
-Repeated searches and empty results are supported; delayed taps outside the
-current result list are ignored.
-
-### 0.4.0: create Pokémon in the app
-
-Create Pokémon directly in empty box or party slots without importing a Pokémon
-file. The species picker shows base forms available in the current game. New
-Pokémon begin as editable level-5 drafts with trainer data from the save and
-appropriate level-up moves.
-
-Only **Apply** writes a draft into the save. When leaving the editor, you can
-apply it, discard it or keep editing. Drafts and entered values are restored after
-restarting the app. Creation supports undo; party members are added without gaps.
-Individual Pokémon import and export remain available.
-
-### 0.3.0: updates and performance
-
-The **Update** action checks public GitHub releases, downloads the newest APK
-with progress and cancellation, verifies it and opens Android's installer.
-See [UPDATES.md](UPDATES.md) for publishing instructions. The former About action
-was removed from the menu.
-
-Artwork loads off the main thread, is scaled for its target view and uses a bounded
-LRU cache. Species rows are reused, rapid searches are debounced and obsolete
-image requests are cancelled. Unchanged previews do not reload their images.
-Navigation retains the header and scroll container, and does not repeatedly write
-or checksum an unchanged save file.
-
-### 0.2.0: artwork and editor layout
-
-Offline HOME artwork covers all 1,025 species, with available shiny and female
-variants. Box thumbnails and large editor previews update when the species or
-shiny selection changes. Four editor tabs organize basic fields, moves, stats and
-information. A compact IV/EV table shows the EV total; Apply and Export remain
-accessible in the fixed footer.
-
-A clearly marked preview contains 20 example Pokémon. These synthetic examples
-are not a complete playable save file.
-
 ## Included functionality
 
 - Import and format detection using the original PKHeX.Core library.
@@ -109,6 +64,10 @@ are not a complete playable save file.
 - Validate value ranges, EV totals, protected slots and game availability.
 - Write the appropriate formats and checksums using Core's original functions.
 - Restore the session and uncommitted editor fields locally.
+- Offline HOME artwork for all 1,025 species, including available shiny and
+  female variants, and a clearly marked preview with 20 example Pokémon.
+- **☰ → Update** checks public GitHub releases, downloads and verifies the newest
+  APK and opens Android's installer. See [UPDATES.md](UPDATES.md).
 - No account required. Save files stay on the device. Only an explicitly started
   update check or APK download accesses the internet.
 

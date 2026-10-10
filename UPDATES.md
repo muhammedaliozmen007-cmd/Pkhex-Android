@@ -47,6 +47,11 @@ GitHub-Laufnummer; die sichtbare Patch-Version wird ebenfalls erhöht. Deshalb
 liefert der erste CI-Lauf auf Basis 0.4.2 eine Version 0.4.3 mit Code 7. Zukünftige
 Basisversionen und Versionscodes im Projekt müssen aufsteigend gepflegt werden.
 
+Die Release-Notizen (Release-Text und `notes` in `update.json`) stammen aus
+`CHANGELOG.md`: aus dem Abschnitt mit genau dieser Version, sonst aus dem obersten
+Abschnitt. Vor jedem Push auf `main` daher oben in `CHANGELOG.md` die neuen
+Änderungen eintragen. Mit `--notes "…"` lässt sich der Text manuell vorgeben.
+
 ## Bereits gebaute APK manuell veröffentlichen
 
 `scripts/package_release.py` erzeugt aus der signierten APK genau die drei
