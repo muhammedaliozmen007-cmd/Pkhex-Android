@@ -4,10 +4,16 @@ Browser-Oberfläche für den bestehenden, unveränderten PKHeX.Core über Blazor
 
 ## Hosting
 - Öffentliche Projektadresse: https://muhammedaliozmen007-cmd.github.io/Pkhex-Android/
-- Unter **Settings → Pages → Build and deployment → Source** muss **GitHub Actions** ausgewählt sein.
+- **Einmalig erforderlich:** Unter **Settings → Pages → Build and deployment → Source** muss **GitHub Actions** ausgewählt sein. Der normale GitHub-Actions-Token darf GitHub Pages **nicht selbst aktivieren**.
 - Danach baut und veröffentlicht `.github/workflows/pages.yml` bei Änderungen auf `main`.
 - Alternativ: **Actions → PKHeX Web on GitHub Pages → Run workflow**.
 - Der Workflow verwendet den Unterpfad `/Pkhex-Android/`. Bei Umbenennung des Repositories auch `wwwroot/index.html` (base href) anpassen.
+
+## Fehlerbehebung bei der Bereitstellung
+- **HTTP 404 in Deploy**: Meist ist GitHub Pages noch nicht aktiviert. Die Pages-Einstellung ist von GitHub Actions unabhängig und muss im Repository konfiguriert werden.
+- **Multiple artifacts named github-pages**: Das trat in einem früheren Workflow auf, wenn alle Jobs desselben Runs erneut ausgeführt wurden. Der jetzige Workflow verwendet nur einen Job und einzigartige Artefaktnamen je Ausführungsversuch.
+- Nach der einmaligen Aktivierung kannst du einen neuen Workflow-Run starten. **Re-run failed jobs** funktioniert im aktuellen Workflow ebenfalls, da Build und Deploy im selben Job laufen.
+- **Erfolgreicher Build, fehlgeschlagener Deploy** bedeutet nicht, dass die Web-App bereits öffentlich erreichbar ist.
 
 ## Funktionen
 - Entschlüsselte Spielstände und unterstützte Pokémon-Dateien importieren (max. 32 MiB)

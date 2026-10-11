@@ -21,11 +21,34 @@ concurrency:
   group: github-pages
   cancel-in-progress: true
 
+# A single job ensures that retrying a failed deployment also builds its own
+# matching artifact. The per-attempt name prevents duplicate-artifact errors.
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    timeout-minutes: 45
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Verify GitHub Pages is enabled for Actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          status=$(curl --silent --show-error --retry 2 \
+            -o "$RUNNER_TEMP/pages-status.json" -w '%{http_code}' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/pages")
+          if [ "$status" != "200" ]; then
+            echo "::error::GitHub Pages is not enabled or accessible (HTTP $status). Open https://github.com/$GITHUB_REPOSITORY/settings/pages and select Build and deployment > Source > GitHub Actions."
+            exit 1
+          fi
+          source=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("build_type",""))' "$RUNNER_TEMP/pages-status.json")
+          if [ "$source" != "workflow" ]; then
+            echo "::error::GitHub Pages is configured for '$source', not GitHub Actions. Open https://github.com/$GITHUB_REPOSITORY/settings/pages and select Build and deployment > Source > GitHub Actions."
+            exit 1
+          fi
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup .NET 10
@@ -45,15 +68,11 @@ jobs:
       - name: Upload site
         uses: actions/upload-pages-artifact@v4
         with:
+          name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
           path: publish/wwwroot/
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-24.04
-    needs: build
-    steps:
+          include-hidden-files: true
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
