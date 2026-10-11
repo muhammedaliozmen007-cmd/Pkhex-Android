@@ -1,0 +1,477 @@
+@page "/"
+@inject IJSRuntime JS
+
+<div class="shell">
+    <header class="topbar">
+        <div class="identity"><span class="brand-ball" aria-hidden="true"></span><div><strong>PKHeX Android</strong><small>Web-Editor · PKHeX.Core</small></div></div>
+        <a class="github" href="https://github.com/muhammedaliozmen007-cmd/Pkhex-Android" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div><span class="eyebrow">IM BROWSER · OHNE SERVERUPLOAD</span><h1>Pokémon-Spielstände bearbeiten</h1>
+                <p>Die Bearbeitungslogik der Android-App, jetzt auch auf PC, Tablet und Smartphone. Deine Dateien bleiben auf deinem Gerät.</p>
+            </div>
+            <span class="version">WEB · 0.1</span>
+        </section>
+
+        @if (error is not null)
+        {
+            <div class="message error" role="alert"><span>@error</span><button type="button" @onclick="ClearError" aria-label="Meldung schließen">×</button></div>
+        }
+        @if (notice is not null)
+        {
+            <div class="message success" role="status"><span>@notice</span><button type="button" @onclick="ClearNotice" aria-label="Meldung schließen">×</button></div>
+        }
+
+        <section class="panel upload">
+            <div><h2>Datei öffnen</h2><p>Entschlüsselter Spielstand (.sav, .dat, „main“) oder einzelne Pokémon-Datei (.pk1–.pk9 und weitere unterstützte Formate), maximal 32 MB.</p></div>
+            <label class="file-label">📁 Datei auswählen <InputFile OnChange="OpenFile" accept=".sav,.dat,.pk1,.pk2,.pk3,.pk4,.pk5,.pk6,.pk7,.pk8,.pk9,.pb8,.pa8,.pa9,.bin,application/octet-stream" /></label>
+        </section>
+
+        @if (session is not null)
+        {
+            <section class="panel">
+                <div class="section-head">
+                    <div><h2>@session.FileName</h2><p>@(session.Save is null ? "Einzelnes Pokémon" : "Spielstand · " + session.Save.Version + " · Generation " + session.Save.Generation)</p></div>
+                    <span class="status @(session.Dirty ? "changed" : "")">@(session.Dirty ? "Änderungen vorhanden" : "Original geladen")</span>
+                </div>
+                <div class="actions">
+                    <button class="primary" type="button" @onclick="ExportFile">⬇ Spielstand / Datei exportieren</button>
+                    <button type="button" @onclick="ExportOriginal">Original sichern</button>
+                    <button type="button" disabled="@(!session.CanUndo)" @onclick="Undo">↶ Rückgängig</button>
+                    <button type="button" @onclick="Reset">Zurücksetzen</button>
+                </div>
+                <p class="hint">Bearbeitete Pokémon zuerst mit „Änderungen übernehmen“ speichern, dann die Datei exportieren. Das Original bleibt unverändert.</p>
+            </section>
+
+            @if (session.Save is { } sav)
+            {
+                <section class="panel">
+                    <div class="section-head"><div><h2>Pokémon auswählen</h2><p>Wähle eine Box oder dein Team und anschließend einen Platz.</p></div></div>
+                    <div class="tabs">
+                        @if (sav.HasBox)
+                        {
+                            <button type="button" class="@(!partyMode ? "active" : "")" @onclick="ShowBoxes">Boxen</button>
+                        }
+                        @if (sav.HasParty)
+                        {
+                            <button type="button" class="@(partyMode ? "active" : "")" @onclick="ShowParty">Team</button>
+                        }
+                    </div>
+                    @if (!partyMode && sav.HasBox)
+                    {
+                        <label class="inline-select">Box
+                            <select value="@boxIndex" @onchange="ChangeBox">
+                                @for (var i = 0; i < sav.BoxCount; i++)
+                                {
+                                    <option value="@i">Box @(i + 1)</option>
+                                }
+                            </select>
+                        </label>
+                    }
+                    @if ((partyMode && sav.HasParty) || (!partyMode && sav.HasBox))
+                    {
+                        <div class="slots">
+                            @for (var i = 0; i < (partyMode ? Math.Min(6, sav.PartyCount + 1) : sav.BoxSlotCount); i++)
+                            {
+                                var position = i;
+                                var pokemon = session.GetEntity(boxIndex, position, partyMode);
+                                <button type="button" class="slot @(selectedSlot == position ? "selected" : "")" @onclick="() => SelectSlot(position)">
+                                    <span class="slot-number">@(position + 1)</span>
+                                    <span class="slot-symbol">@(pokemon.Species == 0 ? "＋" : pokemon.IsShiny ? "✦" : "◉")</span>
+                                    <strong>@(pokemon.Species == 0 ? "Leer" : SpeciesName(pokemon.Species))</strong>
+                                    <small>@(pokemon.Species == 0 ? "Neues Pokémon" : "Lv. " + pokemon.CurrentLevel)</small>
+                                </button>
+                            }
+                        </div>
+                    }
+                </section>
+            }
+
+            @if (current is not null)
+            {
+                <section class="panel">
+                    <div class="section-head"><div><h2>@(current.Species == 0 ? "Freier Platz" : SpeciesName(current.Species))</h2>
+                        <p>@(session.Save is null ? "Einzeldatei bearbeiten" : (partyMode ? "Team" : "Box " + (boxIndex + 1)) + " · Platz " + (selectedSlot + 1))</p></div>
+                    </div>
+                    @if (current.Species == 0 && session.Save is not null)
+                    {
+                        <div class="editor-grid">
+                            <label>Pokémon-Art (Pokédex-Nr.)
+                                <input type="number" min="1" max="@session.Save.BlankPKM.MaxSpeciesID" @bind="createSpecies" />
+                            </label>
+                        </div>
+                        <button class="primary" type="button" @onclick="StartCreation">Pokémon erstellen</button>
+                        <p class="hint">Nur Arten, die im geöffneten Spielstand vorkommen können, sind erlaubt.</p>
+                    }
+                    else
+                    {
+                        <p class="hint">Die Bearbeitung wird mit denselben Prüfungen wie in der Android-App durchgeführt. Ungültige Werte werden beim Übernehmen abgewiesen.</p>
+                        <div class="editor-grid">
+                            <label>Pokédex-Nr.
+                                <input type="number" min="1" max="@current.MaxSpeciesID" @bind="species" />
+                                <small>@SpeciesName((ushort)Math.Clamp(species, 0, ushort.MaxValue))</small>
+                            </label>
+                            <label>Level
+                                <input type="number" min="1" max="100" @bind="level" />
+                            </label>
+                            <label>Spitzname
+                                <input type="text" maxlength="@current.MaxStringLengthNickname" @bind="nickname" disabled="@(!isNicknamed)" />
+                            </label>
+                            <label>Wesen (ID 0–24)
+                                <select @bind="nature">
+                                    @for (var i = 0; i < 25; i++)
+                                    {
+                                        <option value="@i">@((Nature)i)</option>
+                                    }
+                                </select>
+                            </label>
+                            <label>Getragenes Item (ID)
+                                <input type="number" min="0" max="@current.MaxItemID" @bind="heldItem" />
+                            </label>
+                            <label>Fähigkeit (Slot)
+                                <select @bind="abilitySlot">
+                                    <option value="0">1 · Standard</option>
+                                    <option value="1">2 · Zweite Fähigkeit</option>
+                                    <option value="2">3 · Versteckte Fähigkeit</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="checks">
+                            <label><input type="checkbox" @bind="isNicknamed" /> Eigenen Spitznamen verwenden</label>
+                            <label><input type="checkbox" @bind="shiny" /> Schillernd (Shiny)</label>
+                        </div>
+                        <h3>Individuelle Werte (IV)</h3>
+                        <div class="stat-grid">
+                            @for (var i = 0; i < 6; i++)
+                            {
+                                var index = i;
+                                <label>@Stats[i]<input type="number" min="0" max="@current.MaxIV" @bind="ivs[index]" /></label>
+                            }
+                        </div>
+                        <h3>Effort Values (EV)</h3>
+                        <div class="stat-grid">
+                            @for (var i = 0; i < 6; i++)
+                            {
+                                var index = i;
+                                <label>@Stats[i]<input type="number" min="0" max="@current.MaxEV" @bind="evs[index]" /></label>
+                            }
+                        </div>
+                        <p class="hint">EV-Summe: @evs.Sum() @(current.Format >= 3 ? "/ 510" : "")</p>
+                        <h3>Attacken (IDs)</h3>
+                        <div class="stat-grid">
+                            @for (var i = 0; i < 4; i++)
+                            {
+                                var index = i;
+                                <label>Attacke @(i + 1)<input type="number" min="0" max="@current.MaxMoveID" @bind="moves[index]" /></label>
+                            }
+                        </div>
+                        <div class="actions">
+                            <button class="primary" type="button" @onclick="CommitEdit">✓ Änderungen übernehmen</button>
+                            <button type="button" @onclick="ExportPokemon">Pokémon exportieren</button>
+                            <button type="button" @onclick="CheckLegality">Legalität prüfen</button>
+                            @if (session.Save is not null)
+                            {
+                                <label class="file-label secondary">Pokémon importieren <InputFile OnChange="ImportPokemon" /></label>
+                            }
+                        </div>
+                        @if (report is not null)
+                        {
+                            <div class="legality"><h3>Legalitätsbericht</h3><pre>@report</pre></div>
+                        }
+                    }
+                </section>
+            }
+
+            @if (session.Save is { } trainerSave)
+            {
+                <section class="panel">
+                    <h2>Trainer</h2>
+                    <div class="editor-grid">
+                        <label>Name
+                            <input type="text" maxlength="@trainerSave.MaxStringLengthTrainer" @bind="trainerName" />
+                        </label>
+                        <label>Geld
+                            <input type="number" min="0" max="@trainerSave.MaxMoney" @bind="trainerMoney" />
+                        </label>
+                    </div>
+                    <button type="button" @onclick="SaveTrainer">Trainereinstellungen übernehmen</button>
+                </section>
+            }
+        }
+        <footer>
+            <p>Inoffizielles Community-Projekt, nicht von Kaphotics oder Nintendo herausgegeben. PKHeX.Core unter GPL-3.0-or-later. Keine Spieldateien werden an GitHub Pages übertragen.</p>
+            <a href="https://github.com/muhammedaliozmen007-cmd/Pkhex-Android/releases" target="_blank" rel="noopener noreferrer">Android-APK herunterladen ↗</a>
+        </footer>
+    </main>
+</div>
+
+@code {
+    private static readonly string[] Stats = ["KP", "Angriff", "Vert.", "Sp.-Ang.", "Sp.-Vert.", "Init."];
+    private readonly GameStrings strings = GameInfo.GetStrings("de");
+    private EditorSession? session;
+    private PKM? current;
+    private string? error;
+    private string? notice;
+    private string? report;
+    private bool partyMode;
+    private int boxIndex;
+    private int selectedSlot = -1;
+    private int createSpecies = 25;
+    private int species;
+    private int level;
+    private string nickname = "";
+    private bool isNicknamed;
+    private int nature;
+    private int heldItem;
+    private int abilitySlot;
+    private bool shiny;
+    private int[] ivs = new int[6];
+    private int[] evs = new int[6];
+    private int[] moves = new int[4];
+    private string trainerName = "";
+    private uint trainerMoney;
+
+    private string SpeciesName(ushort id) =>
+        id < strings.specieslist.Length && !string.IsNullOrWhiteSpace(strings.specieslist[id])
+            ? strings.specieslist[id] : $"#{id}";
+
+    private void ClearError() => error = null;
+    private void ClearNotice() => notice = null;
+
+    private void ShowError(Exception e)
+    {
+        error = e.Message;
+        notice = null;
+    }
+
+    private async Task OpenFile(InputFileChangeEventArgs e)
+    {
+        error = notice = report = null;
+        try
+        {
+            if (session?.Dirty is true &&
+                !await JS.InvokeAsync<bool>("confirm", "Ungespeicherte Änderungen gehen beim Öffnen einer anderen Datei verloren. Fortfahren?"))
+                return;
+            var selected = e.File;
+            using var memory = new MemoryStream();
+            await selected.OpenReadStream(EditorSession.MaxFileSize).CopyToAsync(memory);
+            var opened = EditorSession.Open(memory.ToArray(), selected.Name);
+            session = opened;
+            partyMode = !((opened.Save?.HasBox) ?? false) && ((opened.Save?.HasParty) ?? false);
+            boxIndex = 0;
+            selectedSlot = opened.Save is null ? 0 : -1;
+            trainerName = opened.Save?.OT ?? "";
+            trainerMoney = opened.Save?.Money ?? 0;
+            LoadCurrent();
+            notice = "Datei geladen. Alles bleibt lokal im Browser.";
+        }
+        catch (Exception ex) { ShowError(ex); }
+    }
+
+    private void ChangeBox(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var value) && session?.Save is { } s && value >= 0 && value < s.BoxCount)
+        {
+            boxIndex = value;
+            selectedSlot = -1;
+            current = null;
+            report = null;
+        }
+    }
+
+    private void ShowBoxes()
+    {
+        partyMode = false;
+        selectedSlot = -1;
+        current = null;
+        report = null;
+    }
+
+    private void ShowParty()
+    {
+        partyMode = true;
+        selectedSlot = -1;
+        current = null;
+        report = null;
+    }
+
+    private void SelectSlot(int position)
+    {
+        selectedSlot = position;
+        LoadCurrent();
+    }
+
+    private void LoadCurrent()
+    {
+        report = null;
+        if (session is null || selectedSlot < 0) { current = null; return; }
+        current = session.GetEntity(boxIndex, selectedSlot, partyMode);
+        var pk = current;
+        species = pk.Species;
+        level = pk.CurrentLevel;
+        nickname = pk.Nickname;
+        isNicknamed = pk.IsNicknamed;
+        nature = (int)pk.Nature;
+        heldItem = pk.HeldItem;
+        abilitySlot = pk.AbilityNumber switch { 4 => 2, 2 => 1, _ => 0 };
+        shiny = pk.IsShiny;
+        ivs = [pk.IV_HP, pk.IV_ATK, pk.IV_DEF, pk.IV_SPA, pk.IV_SPD, pk.IV_SPE];
+        evs = [pk.EV_HP, pk.EV_ATK, pk.EV_DEF, pk.EV_SPA, pk.EV_SPD, pk.EV_SPE];
+        moves = [pk.Move1, pk.Move2, pk.Move3, pk.Move4];
+    }
+
+    private void StartCreation()
+    {
+        try
+        {
+            if (session?.Save is null) return;
+            if (createSpecies < 1 || createSpecies > ushort.MaxValue)
+                throw new ArgumentException("Ungültige Pokédex-Nummer.");
+            current = session.CreateEntity((ushort)createSpecies, boxIndex, selectedSlot, partyMode);
+            var pk = current;
+            species = pk.Species;
+            level = pk.CurrentLevel;
+            nickname = pk.Nickname;
+            isNicknamed = pk.IsNicknamed;
+            nature = (int)pk.Nature;
+            heldItem = pk.HeldItem;
+            abilitySlot = 0;
+            shiny = pk.IsShiny;
+            ivs = [pk.IV_HP, pk.IV_ATK, pk.IV_DEF, pk.IV_SPA, pk.IV_SPD, pk.IV_SPE];
+            evs = [pk.EV_HP, pk.EV_ATK, pk.EV_DEF, pk.EV_SPA, pk.EV_SPD, pk.EV_SPE];
+            moves = [pk.Move1, pk.Move2, pk.Move3, pk.Move4];
+            notice = "Entwurf erstellt. Klicke auf „Änderungen übernehmen“, um das Pokémon im Spielstand zu speichern.";
+            error = null;
+        }
+        catch (Exception ex) { ShowError(ex); }
+    }
+
+    private PKM Draft()
+    {
+        if (current is null) throw new InvalidOperationException("Bitte zuerst ein Pokémon auswählen.");
+        if (species < 1 || species > ushort.MaxValue || level is < 1 or > 100 || moves.Any(m => m < 0 || m > ushort.MaxValue))
+            throw new ArgumentException("Pokédex-Nummer, Level oder Attacken-ID liegen außerhalb des erlaubten Bereichs.");
+        var edit = new PokemonEdit((ushort)species, nickname, isNicknamed, (byte)level,
+            heldItem, (Nature)nature, abilitySlot, shiny, ivs, evs, moves.Select(m => (ushort)m).ToArray());
+        return edit.Apply(current);
+    }
+
+    private void CommitEdit()
+    {
+        try
+        {
+            if (session is null) return;
+            session.Commit(Draft(), boxIndex, selectedSlot, partyMode);
+            LoadCurrent();
+            error = null;
+            notice = "Änderungen übernommen. Jetzt die Datei exportieren.";
+        }
+        catch (Exception ex) { ShowError(ex); }
+    }
+
+    private async Task ExportFile()
+    {
+        try
+        {
+            if (session is null) return;
+            await Download(session.FileName, session.Export());
+            error = null;
+            notice = "Datei exportiert.";
+        }
+        catch (Exception ex) { ShowError(ex); }
+    }
+
+    private async Task ExportOriginal()
+    {
+        try
+        {
+            if (session is null) return;
+            await Download("original-" + session.FileName, session.Original);
+        }
+        catch (Exception ex) { ShowError(ex); }
+    }
+
+    private async Task ExportPokemon()
+    {
+        try
+        {
+            if (current is null) return;
+            var pk = Draft();
+            await Download($"{SpeciesName(pk.Species)}.{pk.Extension}", EditorSession.ExportEntity(pk));
+        }
+        catch (Exception ex) { ShowError(ex); }
+    }
+
+    private async Task Download(string fileName, byte[] data)
+    {
+        using var memory = new MemoryStream(data, writable: false);
+        using var reference = new DotNetStreamReference(memory);
+        await JS.InvokeVoidAsync("pkhexDownload", fileName, reference);
+    }
+
+    private void Undo()
+    {
+        if (session is null) return;
+        session.Undo();
+        LoadCurrent();
+        trainerName = session.Save?.OT ?? "";
+        trainerMoney = session.Save?.Money ?? 0;
+        notice = "Letzte Änderung rückgängig gemacht.";
+        error = null;
+    }
+
+    private async Task Reset()
+    {
+        if (session is null) return;
+        if (!await JS.InvokeAsync<bool>("confirm", "Alle Änderungen verwerfen und zum Original zurückkehren?")) return;
+        session.Reset();
+        LoadCurrent();
+        trainerName = session.Save?.OT ?? "";
+        trainerMoney = session.Save?.Money ?? 0;
+        notice = "Original wiederhergestellt.";
+        error = null;
+    }
+
+    private async Task ImportPokemon(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            if (session?.Save is null || selectedSlot < 0) return;
+            if (session.GetEntity(boxIndex, selectedSlot, partyMode).Species != 0 &&
+                !await JS.InvokeAsync<bool>("confirm", "Das Pokémon auf diesem Platz ersetzen?")) return;
+            using var memory = new MemoryStream();
+            await e.File.OpenReadStream(EditorSession.MaxFileSize).CopyToAsync(memory);
+            session.ImportEntity(memory.ToArray(), e.File.Name, boxIndex, selectedSlot, partyMode);
+            LoadCurrent();
+            notice = "Pokémon importiert. Exportiere den bearbeiteten Spielstand.";
+            error = null;
+        }
+        catch (Exception ex) { ShowError(ex); }
+    }
+
+    private void SaveTrainer()
+    {
+        try
+        {
+            session?.EditTrainer(trainerName, trainerMoney);
+            notice = "Trainerdaten übernommen.";
+            error = null;
+        }
+        catch (Exception ex) { ShowError(ex); }
+    }
+
+    private void CheckLegality()
+    {
+        try
+        {
+            var pk = Draft();
+            var personal = session?.Save?.Personal;
+            var check = personal is null ? new LegalityAnalysis(pk) : new LegalityAnalysis(pk, personal);
+            report = check.Report("de", true);
+            error = null;
+        }
+        catch (Exception ex) { ShowError(ex); }
+    }
+}
